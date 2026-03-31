@@ -2,9 +2,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Icons } from './Icons';
 import {
-  COHORT_LIVE_LEARNERS_COUNT,
-} from './WeeklyLearningLeaderboard';
-import {
   CohortId,
   COHORTS,
   COHORT_LEADERBOARD,
@@ -20,6 +17,7 @@ import {
   buildDailyGoalLessonIds,
   sumLessonPoints,
 } from '../skills';
+import { useSiteVariant } from '../context/SiteVariantContext';
 
 // Assessment sub-skill results type - matches App.tsx
 interface AssessmentSubSkillResults {
@@ -464,8 +462,9 @@ export const Home: React.FC<HomeProps> = ({
     onTakeSkillAssessment,
     dailyTimeGoal = 60,
     introModalClosed = true,
-    enrolledCoursesLoading = false
+    enrolledCoursesLoading = false,
 }) => {
+  const { variant, surface } = useSiteVariant();
   const streakHoursCompletedToday = 0;
 
   const [selectedChip, setSelectedChip] = useState('chip1');
@@ -619,8 +618,11 @@ export const Home: React.FC<HomeProps> = ({
   return (
     <div className="flex-1 bg-[var(--cds-color-white)] overflow-y-auto custom-scrollbar">
       
-      {/* Hero Banner - theme from course (blue default, yellow for Sensory) */}
-      <div className={`relative ${courseData.theme === 'yellow' ? 'bg-[var(--cds-color-yellow-25)]' : 'bg-[var(--cds-color-emphasis-primary-bg-weak)]'}`}>
+      {/* Hero Banner - theme from course (blue default, yellow for Sensory); `surface.*` scopes per site variant */}
+      <div
+        className={`relative ${courseData.theme === 'yellow' ? 'bg-[var(--cds-color-yellow-25)]' : 'bg-[var(--cds-color-emphasis-primary-bg-weak)]'} ${surface.homeHeroExtraClassName}`}
+        data-site-variant={variant}
+      >
         {/* Background pattern: Yellow BG for Sensory course, else BG image C */}
         <div
           aria-hidden
@@ -734,32 +736,13 @@ export const Home: React.FC<HomeProps> = ({
                     )}
 
                     <div className="mt-6 flex w-full flex-row flex-wrap items-center justify-between gap-4 pb-1">
-                      <div className="flex min-h-0 min-w-0 flex-1 flex-row flex-nowrap items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={onResume}
-                          className="bg-[var(--cds-color-blue-700)] hover:bg-[var(--cds-color-blue-800)] text-[var(--cds-color-white)] font-semibold px-4 py-2 rounded-lg transition-colors text-center cds-action-secondary w-auto min-w-[140px] shrink-0"
-                        >
-                          {completedLessons > 0 ? 'Resume learning' : 'Start learning'}
-                        </button>
-                        <div
-                          className="flex min-h-0 min-w-0 flex-1 flex-row flex-nowrap items-center gap-2"
-                          aria-label={`${COHORT_LIVE_LEARNERS_COUNT.toLocaleString()} live learners`}
-                        >
-                          <span className="flex shrink-0 items-center justify-center p-1 -m-1">
-                            <span
-                              className="cds-live-pulse-dot h-2.5 w-2.5 rounded-full border-2 border-[var(--cds-color-white)] bg-[var(--cds-color-green-600)]"
-                              aria-hidden
-                            />
-                          </span>
-                          <p className="cds-body-tertiary shrink-0 whitespace-nowrap leading-none text-[var(--cds-color-grey-600)]">
-                            <span className="tabular-nums text-[var(--cds-color-grey-975)]">
-                              {COHORT_LIVE_LEARNERS_COUNT.toLocaleString()}
-                            </span>{' '}
-                            live learners
-                          </p>
-                        </div>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={onResume}
+                        className="bg-[var(--cds-color-blue-700)] hover:bg-[var(--cds-color-blue-800)] text-[var(--cds-color-white)] font-semibold px-4 py-2 rounded-lg transition-colors text-center cds-action-secondary w-auto min-w-[140px] shrink-0"
+                      >
+                        {completedLessons > 0 ? 'Resume learning' : 'Start learning'}
+                      </button>
                       <div className="flex h-8 shrink-0 items-center justify-end rounded px-2.5 bg-[var(--cds-color-white)]">
                         <img
                           src={courseData.logoUrl || "/google-logo-9822%201.svg"}

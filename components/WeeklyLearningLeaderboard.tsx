@@ -167,9 +167,6 @@ const LEARNER_HOURS_BY_TAB: Record<LeaderboardTabId, Record<number, string>> = {
   careerswitchers: { 18: '6.5h' },
 };
 
-/** Cohort size shown next to hero CTA (competition / FOMO). */
-export const COHORT_LIVE_LEARNERS_COUNT = 1255;
-
 export type LeaderboardLayoutMode = 'stacked' | 'split';
 
 export interface WeeklyLearningLeaderboardProps {

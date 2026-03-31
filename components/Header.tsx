@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from './Icons';
 import { RollingCounter } from './RollingCounter';
+import { useSiteVariant } from '../context/SiteVariantContext';
+import { SITE_VARIANT_OPTIONS } from '../config/siteVariants';
 
 interface HeaderProps {
   currentSP: number;
@@ -15,6 +17,8 @@ interface HeaderProps {
   isHomeView?: boolean;
   onNavigate?: (view: any) => void;
   careerTitle?: string;
+  /** Which primary surface is active when the home-style header nav is shown (home / dashboard / feed). */
+  primaryNavView?: 'home' | 'dashboard' | 'feed';
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -29,8 +33,15 @@ export const Header: React.FC<HeaderProps> = ({
   onLogoClick,
   isHomeView = false,
   onNavigate,
-  careerTitle
+  careerTitle,
+  primaryNavView = 'home',
 }) => {
+  const { variant, setVariant } = useSiteVariant();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const [learnNavOpen, setLearnNavOpen] = useState(false);
+  const learnNavRef = useRef<HTMLDivElement>(null);
+
   const [animate, setAnimate] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [celebrationMessage, setCelebrationMessage] = useState<string | null>(null);
@@ -154,6 +165,62 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [userMenuOpen]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setUserMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [userMenuOpen]);
+
+  useEffect(() => {
+    if (!learnNavOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (learnNavRef.current && !learnNavRef.current.contains(e.target as Node)) {
+        setLearnNavOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [learnNavOpen]);
+
+  useEffect(() => {
+    if (!learnNavOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLearnNavOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [learnNavOpen]);
+
+  useEffect(() => {
+    if (!learnNavOpen) return;
+    const el = learnNavRef.current;
+    if (!el) return;
+    const onFocusOut = (e: FocusEvent) => {
+      const next = e.relatedTarget as Node | null;
+      window.requestAnimationFrame(() => {
+        if (el.contains(document.activeElement)) return;
+        if (next && el.contains(next)) return;
+        setLearnNavOpen(false);
+      });
+    };
+    el.addEventListener('focusout', onFocusOut);
+    return () => el.removeEventListener('focusout', onFocusOut);
+  }, [learnNavOpen]);
+
   const learningGoalTarget = 7;
   const assignmentGoalTarget = 1;
 
@@ -196,12 +263,67 @@ export const Header: React.FC<HeaderProps> = ({
               Explore
               <Icons.ChevronDown className="w-4 h-4" />
             </button>
-            <button 
-              onClick={() => onNavigate && onNavigate('dashboard')}
-              className="cds-body-secondary text-[var(--cds-color-grey-700)] hover:text-[var(--cds-color-blue-700)] transition-colors"
+            <div
+              className="relative"
+              ref={learnNavRef}
+              onMouseEnter={() => setLearnNavOpen(true)}
+              onMouseLeave={() => setLearnNavOpen(false)}
             >
-              My Learning
-            </button>
+              <button
+                type="button"
+                className="flex items-center gap-1 cds-body-secondary text-[var(--cds-color-grey-700)] hover:text-[var(--cds-color-blue-700)] transition-colors"
+                aria-expanded={learnNavOpen}
+                aria-haspopup="menu"
+                aria-controls="primary-learn-nav-menu"
+                onFocus={() => setLearnNavOpen(true)}
+                onClick={() => {
+                  onNavigate?.('home');
+                  setLearnNavOpen(false);
+                }}
+              >
+                Profile
+                <Icons.ChevronDown
+                  className={`w-4 h-4 transition-transform ${learnNavOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {learnNavOpen ? (
+                <div className="absolute left-0 top-full z-50 min-w-[12.5rem] pt-2">
+                <div
+                  id="primary-learn-nav-menu"
+                  role="menu"
+                  aria-orientation="vertical"
+                  className="rounded-xl border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] py-1 shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
+                >
+                  {(
+                    [
+                      { view: 'home' as const, label: 'My Home' },
+                      { view: 'dashboard' as const, label: 'My Learning' },
+                      { view: 'feed' as const, label: 'My Feed' },
+                    ] as const
+                  ).map((item) => (
+                    <button
+                      key={item.view}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={primaryNavView === item.view}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left cds-body-secondary text-[var(--cds-color-grey-900)] hover:bg-[var(--cds-color-grey-50)]"
+                      onClick={() => {
+                        onNavigate?.(item.view);
+                        setLearnNavOpen(false);
+                      }}
+                    >
+                      {primaryNavView === item.view ? (
+                        <Icons.Check className="h-4 w-4 shrink-0 text-[var(--cds-color-blue-700)]" strokeWidth={2.5} />
+                      ) : (
+                        <span className="h-4 w-4 shrink-0" aria-hidden />
+                      )}
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         )}
       </div>
@@ -404,9 +526,62 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               </>
             )}
-            <button className="text-[var(--cds-color-grey-500)] hover:text-[var(--cds-color-grey-700)] transition-colors" onClick={() => onNavigate && onNavigate('dashboard')}>
-                 <Icons.User />
-            </button>
+            <div className="relative flex items-center" ref={userMenuRef}>
+              <button
+                type="button"
+                className="text-[var(--cds-color-grey-500)] hover:text-[var(--cds-color-grey-700)] transition-colors rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-700)] focus-visible:ring-offset-2"
+                aria-expanded={userMenuOpen}
+                aria-haspopup="menu"
+                aria-controls="site-variant-menu"
+                onClick={() => setUserMenuOpen((open) => !open)}
+              >
+                <Icons.User />
+              </button>
+              {userMenuOpen ? (
+                <div
+                  id="site-variant-menu"
+                  role="menu"
+                  aria-orientation="vertical"
+                  className="absolute right-0 top-full mt-2 min-w-[14rem] rounded-xl border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] py-1 shadow-[0_8px_30px_rgba(0,0,0,0.12)] z-50"
+                >
+                  <p className="px-3 py-2 cds-body-tertiary text-[var(--cds-color-grey-500)] uppercase tracking-wide text-xs">
+                    Site version
+                  </p>
+                  {SITE_VARIANT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={variant === opt.id}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left cds-body-secondary text-[var(--cds-color-grey-900)] hover:bg-[var(--cds-color-grey-50)]"
+                      onClick={() => {
+                        setVariant(opt.id);
+                        setUserMenuOpen(false);
+                      }}
+                    >
+                      {variant === opt.id ? (
+                        <Icons.Check className="h-4 w-4 shrink-0 text-[var(--cds-color-blue-700)]" strokeWidth={2.5} />
+                      ) : (
+                        <span className="h-4 w-4 shrink-0" aria-hidden />
+                      )}
+                      {opt.label}
+                    </button>
+                  ))}
+                  <div className="my-1 border-t border-[var(--cds-color-grey-100)]" role="separator" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full items-center px-3 py-2 text-left cds-body-secondary text-[var(--cds-color-grey-900)] hover:bg-[var(--cds-color-grey-50)]"
+                    onClick={() => {
+                      onNavigate?.('dashboard');
+                      setUserMenuOpen(false);
+                    }}
+                  >
+                    My Learning
+                  </button>
+                </div>
+              ) : null}
+            </div>
         </div>
       </div>
       </div>

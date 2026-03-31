@@ -1,6 +1,7 @@
 
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { SiteVariantProvider } from './context/SiteVariantContext';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MainContent } from './components/MainContent';
@@ -15,6 +16,7 @@ import { PlanConfirmationModal } from './components/PlanConfirmationModal';
 import { SkillProgressModal } from './components/SkillProgressModal';
 import { MyLearning } from './components/MyLearning';
 import { Home } from './components/Home';
+import { FeedPage } from './components/FeedPage';
 import { AssessmentStart } from './components/AssessmentStart';
 import { AssessmentResult } from './components/AssessmentResult';
 import { BadgeAchievement } from './components/BadgeAchievement';
@@ -31,7 +33,7 @@ import {
 } from './skills';
 import { Lesson, CourseData, Status, ContentType } from './types';
 
-type View = 'learning' | 'dashboard' | 'home' | 'assessment' | 'assessment-result' | 'badge-achievement';
+type View = 'learning' | 'dashboard' | 'home' | 'feed' | 'assessment' | 'assessment-result' | 'badge-achievement';
 
 // Assessment sub-skill results - tracks points earned per sub-skill from assessments
 export interface AssessmentSubSkillResults {
@@ -688,7 +690,11 @@ const App: React.FC = () => {
 
   const navigateToHome = () => {
     setCurrentView('home');
-  }
+  };
+
+  const navigateToFeed = () => {
+    setCurrentView('feed');
+  };
   
   const navigateToAssessment = () => {
     setCurrentView('assessment');
@@ -719,6 +725,7 @@ const App: React.FC = () => {
   const isAssessmentResultView = currentView === 'assessment-result' || currentView === 'badge-achievement';
 
   return (
+    <SiteVariantProvider>
     <div className="flex flex-col h-screen bg-[var(--cds-color-grey-25)] text-[var(--cds-color-grey-975)]">
       <Header 
         currentSP={dailySP} // Use daily SP for the header goal
@@ -731,12 +738,17 @@ const App: React.FC = () => {
           setDailyGoalCompletions(prev => prev + 1);
         }}
         hideProgress={true} // Always hide the top progress bar as per new design request
-        backgroundColor={(currentView === 'dashboard' || currentView === 'home' || currentView === 'assessment' || isAssessmentResultView) ? 'bg-[var(--cds-color-white)]' : 'bg-[var(--cds-color-grey-25)]'}
-        showPartnerLogo={currentView !== 'dashboard' && currentView !== 'home' && currentView !== 'assessment' && !isAssessmentResultView}
+        backgroundColor={(currentView === 'dashboard' || currentView === 'home' || currentView === 'feed' || currentView === 'assessment' || isAssessmentResultView) ? 'bg-[var(--cds-color-white)]' : 'bg-[var(--cds-color-grey-25)]'}
+        showPartnerLogo={currentView !== 'dashboard' && currentView !== 'home' && currentView !== 'feed' && currentView !== 'assessment' && !isAssessmentResultView}
         onLogoClick={navigateToHome}
-        isHomeView={currentView === 'home' || currentView === 'dashboard'}
+        isHomeView={currentView === 'home' || currentView === 'dashboard' || currentView === 'feed'}
         onNavigate={(view) => setCurrentView(view)}
-        careerTitle={currentView === 'home' || currentView === 'dashboard' ? 'Data Analyst' : undefined}
+        careerTitle={currentView === 'home' || currentView === 'dashboard' || currentView === 'feed' ? 'Data Analyst' : undefined}
+        primaryNavView={
+          currentView === 'home' || currentView === 'dashboard' || currentView === 'feed'
+            ? currentView
+            : 'home'
+        }
       />
       
       <div className="flex flex-1 overflow-hidden relative bg-[var(--cds-color-white)]">
@@ -758,6 +770,8 @@ const App: React.FC = () => {
             introModalClosed={true}
           />
         )}
+
+        {currentView === 'feed' && <FeedPage />}
 
         {currentView === 'learning' && (
           <>
@@ -943,6 +957,7 @@ const App: React.FC = () => {
 
       </div>
     </div>
+    </SiteVariantProvider>
   );
 };
 

@@ -1210,3 +1210,43 @@ input, button, textarea, select {
 .animate-breathe {
   animation: breathe 0.6s ease-in-out;
 }
+
+/* Feed card “cheer” — single-play ripple + icon pop */
+@keyframes feed-like-ripple {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.25);
+    opacity: 0;
+  }
+}
+
+.feed-like-ripple {
+  position: absolute;
+  inset: -6px;
+  margin: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--cds-color-blue-500) 40%, transparent);
+  pointer-events: none;
+  animation: feed-like-ripple 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes feed-like-icon-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-feed-like-icon-pop {
+  animation: feed-like-icon-pop 0.48s cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+}

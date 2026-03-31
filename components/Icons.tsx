@@ -53,7 +53,8 @@ import {
   PauseCircle,
   Brain,
   VolumeX,
-  Volume2
+  Volume2,
+  SlidersHorizontal
 } from 'lucide-react';
 
 export const Icons = {
@@ -98,6 +99,8 @@ export const Icons = {
   Info: Info,
   Target: Target,
   Settings: Settings,
+  /** Pinterest-style filter control */
+  FilterSliders: SlidersHorizontal,
   Compass: Compass,
   BookOpen: BookOpen,
   GraduationCap: GraduationCap,
