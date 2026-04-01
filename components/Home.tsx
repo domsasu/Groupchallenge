@@ -801,34 +801,27 @@ export const Home: React.FC<HomeProps> = ({
                             </>
                           )}
                           {todaysPlan.firstLesson && !introVideoEnded && (
-                            <>
-                              <div className="absolute top-0 left-0 right-0 pt-4 px-4 bg-black/20 pointer-events-none">
-                                <p className="cds-action-secondary text-[var(--cds-color-white)] truncate drop-shadow-md">
-                                  {todaysPlan.firstLesson.title}
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const nextMuted = !introVideoMuted;
-                                  setIntroVideoMuted(nextMuted);
-                                  const v = introVideoRef.current;
-                                  if (v) {
-                                    v.muted = nextMuted;
-                                    if (!nextMuted) v.play().catch(() => {});
-                                  }
-                                }}
-                                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 flex items-center justify-center hover:bg-black/40 transition-colors z-10"
-                                aria-label={introVideoMuted ? 'Unmute' : 'Mute'}
-                              >
-                                {introVideoMuted ? (
-                                  <Icons.VolumeX className="w-4 h-4 text-[var(--cds-color-white)]" />
-                                ) : (
-                                  <Icons.Volume className="w-4 h-4 text-[var(--cds-color-white)]" />
-                                )}
-                              </button>
-                            </>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const nextMuted = !introVideoMuted;
+                                setIntroVideoMuted(nextMuted);
+                                const v = introVideoRef.current;
+                                if (v) {
+                                  v.muted = nextMuted;
+                                  if (!nextMuted) v.play().catch(() => {});
+                                }
+                              }}
+                              className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/20 transition-colors hover:bg-black/40"
+                              aria-label={introVideoMuted ? 'Unmute' : 'Mute'}
+                            >
+                              {introVideoMuted ? (
+                                <Icons.VolumeX className="h-4 w-4 text-[var(--cds-color-white)]" />
+                              ) : (
+                                <Icons.Volume className="h-4 w-4 text-[var(--cds-color-white)]" />
+                              )}
+                            </button>
                           )}
                           {introVideoEnded && (
                             <button
