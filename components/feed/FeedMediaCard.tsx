@@ -1,6 +1,16 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { RotateCcw, RotateCw } from 'lucide-react';
 import { Icons } from '../Icons';
 import type { FeedPlaceholderItem, FeedPlaceholderMediaType } from '../../constants/feedCohorts';
+
+const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5] as const;
+
+function formatTimestamp(sec: number): string {
+  if (!Number.isFinite(sec) || sec < 0) return '00:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 interface FeedMediaCardProps {
   item: FeedPlaceholderItem;
@@ -55,6 +65,11 @@ export const FeedMediaCard: React.FC<FeedMediaCardProps> = ({ item }) => {
   const podcastTitleId = useId();
   const podcastAudioRef = useRef<HTMLAudioElement>(null);
   const [podcastPlayerOpen, setPodcastPlayerOpen] = useState(false);
+  const [podcastPlaying, setPodcastPlaying] = useState(true);
+  const [podcastCurrentTime, setPodcastCurrentTime] = useState(0);
+  const [podcastDuration, setPodcastDuration] = useState(0);
+  const [podcastRateIdx, setPodcastRateIdx] = useState(1);
+  const [podcastMuted, setPodcastMuted] = useState(false);
   const { cheer, share } = useMemo(() => engagementMetrics(type, title), [type, title]);
   const [cheered, setCheered] = useState(false);
   const [cheerBurstKey, setCheerBurstKey] = useState(0);
@@ -68,12 +83,77 @@ export const FeedMediaCard: React.FC<FeedMediaCardProps> = ({ item }) => {
       a.currentTime = 0;
     }
     setPodcastPlayerOpen(false);
+    setPodcastPlaying(false);
+    setPodcastCurrentTime(0);
+    setPodcastDuration(0);
+    setPodcastRateIdx(1);
+    setPodcastMuted(false);
   }, []);
 
   useEffect(() => {
     if (!podcastPlayerOpen || !podcastAudioUrl) return;
     void podcastAudioRef.current?.play().catch(() => {});
   }, [podcastPlayerOpen, podcastAudioUrl]);
+
+  useEffect(() => {
+    const a = podcastAudioRef.current;
+    if (!podcastPlayerOpen || !a) return;
+    const onTime = () => setPodcastCurrentTime(a.currentTime);
+    const syncDuration = () => {
+      const d = a.duration;
+      setPodcastDuration(Number.isFinite(d) && d > 0 ? d : 0);
+    };
+    const onPlay = () => setPodcastPlaying(true);
+    const onPause = () => setPodcastPlaying(false);
+    const onEnded = () => setPodcastPlaying(false);
+    a.addEventListener('timeupdate', onTime);
+    a.addEventListener('loadedmetadata', syncDuration);
+    a.addEventListener('durationchange', syncDuration);
+    a.addEventListener('play', onPlay);
+    a.addEventListener('pause', onPause);
+    a.addEventListener('ended', onEnded);
+    syncDuration();
+    setPodcastCurrentTime(a.currentTime);
+    return () => {
+      a.removeEventListener('timeupdate', onTime);
+      a.removeEventListener('loadedmetadata', syncDuration);
+      a.removeEventListener('durationchange', syncDuration);
+      a.removeEventListener('play', onPlay);
+      a.removeEventListener('pause', onPause);
+      a.removeEventListener('ended', onEnded);
+    };
+  }, [podcastPlayerOpen, podcastAudioUrl]);
+
+  useEffect(() => {
+    const a = podcastAudioRef.current;
+    if (a) a.playbackRate = PLAYBACK_RATES[podcastRateIdx];
+  }, [podcastRateIdx, podcastPlayerOpen]);
+
+  useEffect(() => {
+    const a = podcastAudioRef.current;
+    if (a) a.muted = podcastMuted;
+  }, [podcastMuted, podcastPlayerOpen]);
+
+  const seekPodcast = useCallback((next: number) => {
+    const a = podcastAudioRef.current;
+    if (!a) return;
+    const limit =
+      podcastDuration > 0
+        ? podcastDuration
+        : Number.isFinite(a.duration) && a.duration > 0
+          ? a.duration
+          : 0;
+    const clamped = limit > 0 ? Math.max(0, Math.min(limit, next)) : Math.max(0, next);
+    a.currentTime = clamped;
+    setPodcastCurrentTime(clamped);
+  }, [podcastDuration]);
+
+  const podcastProgressPct =
+    podcastDuration > 0
+      ? Math.min(100, Math.max(0, (podcastCurrentTime / podcastDuration) * 100))
+      : 0;
+  const podcastRemaining = Math.max(0, podcastDuration - podcastCurrentTime);
+  const podcastRate = PLAYBACK_RATES[podcastRateIdx];
 
   useEffect(() => {
     if (!podcastPlayerOpen) return;
@@ -109,9 +189,18 @@ export const FeedMediaCard: React.FC<FeedMediaCardProps> = ({ item }) => {
               thumbnailUrl ? 'bg-[var(--cds-color-grey-975)]/40' : 'bg-[var(--cds-color-grey-200)]/80'
             }`}
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--cds-color-grey-975)] text-[var(--cds-color-white)] shadow-md">
-              <Icons.Play className="h-7 w-7 translate-x-0.5" />
-            </div>
+            <button
+              type="button"
+              disabled
+              aria-label={`Play video · ${title}`}
+              className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-transparent p-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-40 ${
+                thumbnailUrl
+                  ? 'text-white focus-visible:ring-white focus-visible:ring-offset-black/40'
+                  : 'text-[var(--cds-color-grey-975)] focus-visible:ring-[var(--cds-color-blue-500)]'
+              }`}
+            >
+              <Icons.Play className="h-8 w-8 shrink-0 translate-x-px" strokeWidth={1.75} aria-hidden />
+            </button>
           </div>
           {thumbnailAttribution && thumbnailAttributionUrl ? (
             <div className="pointer-events-auto absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-10">
@@ -157,32 +246,135 @@ export const FeedMediaCard: React.FC<FeedMediaCardProps> = ({ item }) => {
               role="dialog"
               aria-modal="true"
               aria-labelledby={podcastTitleId}
-              className="absolute inset-0 z-10 flex items-center justify-center p-3"
+              className="absolute inset-0 z-10 flex flex-col"
             >
               <div
                 className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"
                 aria-hidden
               />
-              <div className="relative z-[1] flex w-full max-w-md flex-col items-stretch gap-3">
-                <span id={podcastTitleId} className="sr-only">
-                  {title}
-                </span>
-                <div className="flex justify-end">
+              <span id={podcastTitleId} className="sr-only">
+                {title}
+              </span>
+              <button
+                type="button"
+                className="absolute right-3 top-3 z-20 inline-flex min-h-10 min-w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a2540]"
+                aria-label="Close podcast player"
+                onClick={closePodcastPlayer}
+              >
+                <Icons.Close className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+              </button>
+              <audio ref={podcastAudioRef} src={podcastAudioUrl} className="sr-only" preload="metadata" />
+              <div
+                className="relative z-[1] mt-auto w-full px-4 pb-4 pt-3 text-white"
+                style={{
+                  backgroundColor: 'color-mix(in srgb, var(--cds-color-blue-700) 70%, transparent)',
+                }}
+              >
+                <div className="flex items-center justify-between gap-3">
                   <button
                     type="button"
-                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a2540]"
-                    aria-label="Close podcast player"
-                    onClick={closePodcastPlayer}
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[var(--cds-color-blue-800)] shadow-sm transition-opacity hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--cds-color-blue-700)]"
+                    aria-label={podcastPlaying ? 'Pause' : 'Play'}
+                    onClick={() => {
+                      const a = podcastAudioRef.current;
+                      if (!a) return;
+                      if (podcastPlaying) void a.pause();
+                      else void a.play();
+                    }}
                   >
-                    <Icons.Close className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                    {podcastPlaying ? (
+                      <Icons.Pause className="h-6 w-6 shrink-0" strokeWidth={2.25} aria-hidden />
+                    ) : (
+                      <Icons.Play className="h-6 w-6 shrink-0 translate-x-px" strokeWidth={2} aria-hidden />
+                    )}
                   </button>
+                  <div className="flex flex-wrap items-center justify-end gap-2 sm:flex-nowrap sm:gap-3">
+                    <button
+                      type="button"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      aria-label="Rewind 15 seconds"
+                      onClick={() => seekPodcast(podcastCurrentTime - 15)}
+                    >
+                      <span className="relative block h-7 w-7 shrink-0">
+                        <RotateCcw
+                          className="pointer-events-none absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                        <span className="pointer-events-none absolute left-1/2 top-1/2 z-[1] flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-[10px] font-bold tabular-nums leading-none tracking-tight">
+                          15
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      aria-label="Forward 30 seconds"
+                      onClick={() => seekPodcast(podcastCurrentTime + 30)}
+                    >
+                      <span className="relative block h-7 w-7 shrink-0">
+                        <RotateCw
+                          className="pointer-events-none absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                        <span className="pointer-events-none absolute left-1/2 top-1/2 z-[1] flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-[10px] font-bold tabular-nums leading-none tracking-tight">
+                          30
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex h-10 min-h-10 shrink-0 items-center justify-center rounded-full border border-white/90 px-3 text-sm font-semibold leading-none tabular-nums text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      aria-label={`Playback speed ${podcastRate}x`}
+                      onClick={() => setPodcastRateIdx((i) => (i + 1) % PLAYBACK_RATES.length)}
+                    >
+                      {podcastRate === 1 ? '1.0x' : `${podcastRate}x`}
+                    </button>
+                    <button
+                      type="button"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition-colors hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      aria-label={podcastMuted ? 'Unmute' : 'Mute'}
+                      onClick={() => setPodcastMuted((m) => !m)}
+                    >
+                      {podcastMuted ? (
+                        <Icons.VolumeX className="h-6 w-6 shrink-0" strokeWidth={2} aria-hidden />
+                      ) : (
+                        <Icons.Volume className="h-6 w-6 shrink-0" strokeWidth={2} aria-hidden />
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <audio
-                  ref={podcastAudioRef}
-                  src={podcastAudioUrl}
-                  controls
-                  className="w-full min-w-0 rounded-md bg-[var(--cds-color-white)]"
-                />
+                {/* h-3 wrapper = thumb diameter; timestamps sit flush under the track */}
+                <div className="relative mt-4 w-full pt-2 pb-1">
+                  <div className="relative mx-auto h-3 w-full">
+                    <div className="pointer-events-none absolute inset-x-0 top-1/2 z-0 h-1 -translate-y-1/2 rounded-full bg-white/35" />
+                    <div
+                      className={`pointer-events-none absolute left-0 top-1/2 z-0 h-1 -translate-y-1/2 bg-white ${
+                        podcastProgressPct >= 99.5 ? 'rounded-full' : 'rounded-l-full'
+                      }`}
+                      style={{ width: `${podcastProgressPct}%` }}
+                    />
+                    <div
+                      className="pointer-events-none absolute top-0 z-[1] h-3 w-3 -translate-x-1/2 rounded-full bg-white shadow-sm"
+                      style={{ left: `${podcastProgressPct}%` }}
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={podcastDuration > 0 ? podcastDuration : 100}
+                      step={0.1}
+                      value={podcastDuration > 0 ? podcastCurrentTime : 0}
+                      aria-label="Seek"
+                      onChange={(e) => seekPodcast(Number(e.target.value))}
+                      className="absolute inset-x-0 top-1/2 z-[2] h-10 w-full -translate-y-1/2 cursor-pointer opacity-0"
+                    />
+                  </div>
+                  <div className="mt-0.5 flex items-center justify-between gap-2 text-[11px] font-medium leading-tight tabular-nums text-white/90">
+                    <span>{formatTimestamp(podcastCurrentTime)}</span>
+                    <span className="text-white/85">-{formatTimestamp(podcastRemaining)}</span>
+                  </div>
+                </div>
               </div>
             </div>
           ) : null}
