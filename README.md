@@ -8,7 +8,7 @@ This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/161PQcgIc24BwVXMWnOArxoNPf2Jooxgq
 
-**Live demo (Vercel):** [Update with your Vercel deployment URL]
+**Live demo (Vercel):** [contentfeed.vercel.app](https://contentfeed.vercel.app/)
 
 ## Run Locally
 
