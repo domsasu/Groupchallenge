@@ -215,6 +215,59 @@ input, button, textarea, select {
   animation: fade-in 0.5s ease-out forwards;
 }
 
+/* Feed rail cohort avatars — gentle in-circle drift (Unsplash stills feel slightly alive) */
+@keyframes cohort-rail-avatar-drift {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.18);
+  }
+}
+
+.cohort-rail-avatar-motion {
+  animation: cohort-rail-avatar-drift 14s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cohort-rail-avatar-motion {
+    animation: none;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+}
+
+/* Header “new activity” dot — soft pulsing blue glow (white halo preserved) */
+/* Spread 0 on blue layers so blur starts at the dot edge (no “floating” glow gap). */
+@keyframes header-activity-dot-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px var(--cds-color-white),
+      0 0 3px 0 color-mix(in srgb, var(--cds-color-blue-700) 55%, transparent),
+      0 0 10px 0 color-mix(in srgb, var(--cds-color-blue-700) 30%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px var(--cds-color-white),
+      0 0 6px 0 color-mix(in srgb, var(--cds-color-blue-700) 65%, transparent),
+      0 0 16px 0 color-mix(in srgb, var(--cds-color-blue-700) 38%, transparent);
+  }
+}
+
+.animate-header-activity-dot-glow {
+  animation: header-activity-dot-glow 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-header-activity-dot-glow {
+    animation: none;
+    box-shadow:
+      0 0 0 1px var(--cds-color-white),
+      0 0 5px 0 color-mix(in srgb, var(--cds-color-blue-700) 45%, transparent);
+  }
+}
+
 /* Count Up Animation - For animated numbers */
 @keyframes count-up {
   0% {

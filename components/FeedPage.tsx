@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSiteVariant } from '../context/SiteVariantContext';
 import {
+  DEFAULT_FEED_DISCIPLINE_SLUGS,
   JOINABLE_FEED_COHORT_IDS,
   JOINED_FEED_COHORT_IDS,
-  courseraDisciplineLabelForSlug,
   getAllStreamFeedPlaceholderItems,
   getFeedPlaceholderItems,
   type FeedCohortId,
@@ -15,12 +15,21 @@ import { FeedTimeline } from './feed/FeedTimeline';
 import { Icons } from './Icons';
 import { enrichFeedVideoThumbnails } from '../services/unsplashThumbnails';
 
-export const FeedPage: React.FC = () => {
+export interface FeedPageProps {
+  /** When opening Community from Home mini-feed, select this cohort (same as mini-feed lead cohort). */
+  initialSelectedCohortId?: FeedCohortId;
+}
+
+export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId }) => {
   const { variant, surface } = useSiteVariant();
   /** `null` = All snacks stream (mixed cohorts). */
-  const [selectedCohortId, setSelectedCohortId] = useState<FeedCohortId | null>(null);
-  /** Optional career-area lens; default is cohort-only feed (no pill selected). */
-  const [activeDisciplineSlug, setActiveDisciplineSlug] = useState<string | null>(null);
+  const [selectedCohortId, setSelectedCohortId] = useState<FeedCohortId | null>(
+    () => initialSelectedCohortId ?? null
+  );
+  /** Multi-select Coursera browse disciplines; empty = same as “All” (no discipline lens). */
+  const [activeDisciplineSlugs, setActiveDisciplineSlugs] = useState<string[]>(() => [
+    ...DEFAULT_FEED_DISCIPLINE_SLUGS,
+  ]);
   /** Cohorts the user joined via the rail CTA (moved from discover into “yours”). */
   const [joinedViaRailIds, setJoinedViaRailIds] = useState<FeedCohortId[]>([]);
 
@@ -38,24 +47,21 @@ export const FeedPage: React.FC = () => {
     [railJoinedIds, railJoinableIds]
   );
 
-  const activeDisciplineLabel = useMemo(
-    () =>
-      activeDisciplineSlug ? courseraDisciplineLabelForSlug(activeDisciplineSlug) : undefined,
-    [activeDisciplineSlug]
+  const disciplineKey = useMemo(
+    () => [...activeDisciplineSlugs].sort().join('|'),
+    [activeDisciplineSlugs]
   );
 
   const feedItems = useMemo(
     () =>
       selectedCohortId === null
         ? getAllStreamFeedPlaceholderItems(allStreamCohortIds, {
-            disciplineLabel: activeDisciplineLabel,
-            disciplineSlug: activeDisciplineSlug,
+            disciplineSlugs: activeDisciplineSlugs,
           })
         : getFeedPlaceholderItems(selectedCohortId, {
-            disciplineLabel: activeDisciplineLabel,
-            disciplineSlug: activeDisciplineSlug,
+            disciplineSlugs: activeDisciplineSlugs,
           }),
-    [selectedCohortId, allStreamCohortIds, activeDisciplineLabel, activeDisciplineSlug]
+    [selectedCohortId, allStreamCohortIds, activeDisciplineSlugs]
   );
 
   const [feedItemsWithThumbs, setFeedItemsWithThumbs] = useState<FeedPlaceholderItem[] | null>(null);
@@ -80,26 +86,20 @@ export const FeedPage: React.FC = () => {
         data-site-variant={variant}
       >
         <div className="relative z-10 max-w-[1440px] mx-auto px-4 md:px-6 py-4 md:py-5">
-          {/* Pinterest-style search + discipline chips above feed */}
-          <div className="mb-5 space-y-3">
-            <div className="flex w-full items-center rounded-full border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] px-4 py-3 shadow-sm transition-shadow focus-within:border-[var(--cds-color-grey-300)] focus-within:shadow-[0_0_0_2px_rgba(17,17,17,0.06)]">
-              <Icons.Search className="mr-3 h-5 w-5 shrink-0 text-[#767676]" strokeWidth={2} aria-hidden />
-              <input
-                type="search"
-                placeholder="Search any topic here."
-                className="min-w-0 flex-1 border-0 bg-transparent text-[15px] leading-snug text-[#111111] placeholder:text-[#767676] outline-none"
-                aria-label="Search any topic"
-              />
-            </div>
-            <div className="flex min-w-0 items-start gap-3">
+          <div className="mb-5 flex min-w-0 items-start gap-3">
+            <div className="min-w-0 flex-1">
               <FeedCohortPills
                 variant="coursera"
-                activeSlug={activeDisciplineSlug}
-                onSelectSlug={(slug) => {
-                  setActiveDisciplineSlug(slug);
-                  if (slug === null) setSelectedCohortId(null);
+                selectedSlugs={activeDisciplineSlugs}
+                onToggleSlug={(slug) => {
+                  setActiveDisciplineSlugs((prev) =>
+                    prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+                  );
                 }}
+                onClearDisciplines={() => setActiveDisciplineSlugs([])}
               />
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-transparent p-0 text-[#111111] transition-colors hover:bg-[var(--cds-color-grey-100)]"
@@ -107,15 +107,23 @@ export const FeedPage: React.FC = () => {
               >
                 <Icons.FilterSliders className="h-5 w-5 text-[#111111]" strokeWidth={2} aria-hidden />
               </button>
+              <button
+                type="button"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-transparent p-0 text-[#111111] transition-colors hover:bg-[var(--cds-color-grey-100)]"
+                aria-label="Search (placeholder)"
+              >
+                <Icons.Search className="h-5 w-5 text-[#111111]" strokeWidth={2} aria-hidden />
+              </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-x-6 lg:gap-y-4">
             <div className="order-1 min-w-0 lg:col-span-9">
               <FeedTimeline
-                key={`${selectedCohortId ?? 'all'}-${activeDisciplineSlug ?? ''}`}
+                key={`${selectedCohortId ?? 'all'}-${disciplineKey}`}
                 cohortId={selectedCohortId ?? 'all'}
                 items={timelineItems}
+                activeDisciplineSlugs={activeDisciplineSlugs}
               />
             </div>
             <div className="order-2 min-w-0 lg:col-span-3">

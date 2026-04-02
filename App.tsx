@@ -1,6 +1,6 @@
 
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { SiteVariantProvider } from './context/SiteVariantContext';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -21,6 +21,7 @@ import { AssessmentStart } from './components/AssessmentStart';
 import { AssessmentResult } from './components/AssessmentResult';
 import { BadgeAchievement } from './components/BadgeAchievement';
 import { COURSE_DATA } from './constants';
+import type { FeedCohortId } from './constants/feedCohorts';
 import {
   aggregateSkillPoints,
   buildDailyGoalLessonIds,
@@ -692,10 +693,17 @@ const App: React.FC = () => {
     setCurrentView('home');
   };
 
-  const navigateToFeed = () => {
+  const [feedInitialCohortId, setFeedInitialCohortId] = useState<FeedCohortId | undefined>(undefined);
+
+  const navigateToFeed = useCallback((opts?: { cohortId: FeedCohortId }) => {
+    if (opts?.cohortId) setFeedInitialCohortId(opts.cohortId);
     setCurrentView('feed');
-  };
-  
+  }, []);
+
+  useEffect(() => {
+    if (currentView !== 'feed') setFeedInitialCohortId(undefined);
+  }, [currentView]);
+
   const navigateToAssessment = () => {
     setCurrentView('assessment');
   }
@@ -778,7 +786,9 @@ const App: React.FC = () => {
           />
         )}
 
-        {currentView === 'feed' && <FeedPage />}
+        {currentView === 'feed' && (
+          <FeedPage initialSelectedCohortId={feedInitialCohortId} />
+        )}
 
         {currentView === 'learning' && (
           <>

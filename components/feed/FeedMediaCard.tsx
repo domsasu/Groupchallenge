@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import { RotateCcw, RotateCw } from 'lucide-react';
 import { Icons } from '../Icons';
 import type { FeedPlaceholderItem, FeedPlaceholderMediaType } from '../../constants/feedCohorts';
+import { FeedAutoplayPreviewVideo } from './FeedAutoplayPreviewVideo';
 
 const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5] as const;
 
@@ -14,6 +15,8 @@ function formatTimestamp(sec: number): string {
 
 interface FeedMediaCardProps {
   item: FeedPlaceholderItem;
+  /** Data Science discipline: first two feed videos use real preview MOV assets. */
+  feedPreviewVideoSrc?: string;
 }
 
 function stableHash(str: string): number {
@@ -50,7 +53,7 @@ function formatEngagementCount(n: number): string {
   return n.toLocaleString();
 }
 
-export const FeedMediaCard: React.FC<FeedMediaCardProps> = ({ item }) => {
+export const FeedMediaCard: React.FC<FeedMediaCardProps> = ({ item, feedPreviewVideoSrc }) => {
   const {
     type,
     title,
@@ -173,53 +176,62 @@ export const FeedMediaCard: React.FC<FeedMediaCardProps> = ({ item }) => {
         <span className="cds-body-tertiary text-[var(--cds-color-grey-500)]">{meta}</span>
       </div>
 
-      {type === 'video' && (
-        <div className="relative mb-3 aspect-video w-full overflow-hidden rounded-lg bg-[var(--cds-color-grey-100)]">
-          {thumbnailUrl ? (
-            <img
-              src={thumbnailUrl}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : null}
-          <div
-            className={`absolute inset-0 flex items-center justify-center ${
-              thumbnailUrl ? 'bg-[var(--cds-color-grey-975)]/40' : 'bg-[var(--cds-color-grey-200)]/80'
-            }`}
-          >
-            <button
-              type="button"
-              disabled
-              aria-label={`Play video · ${title}`}
-              className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-transparent p-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-40 ${
-                thumbnailUrl
-                  ? 'text-white focus-visible:ring-white focus-visible:ring-offset-black/40'
-                  : 'text-[var(--cds-color-grey-975)] focus-visible:ring-[var(--cds-color-blue-500)]'
+      {type === 'video' &&
+        (feedPreviewVideoSrc ? (
+          <FeedAutoplayPreviewVideo
+            src={feedPreviewVideoSrc}
+            poster={thumbnailUrl}
+            maxAutoplaySeconds={10}
+            thumbnailAttribution={thumbnailAttribution}
+            thumbnailAttributionUrl={thumbnailAttributionUrl}
+          />
+        ) : (
+          <div className="relative mb-3 aspect-video w-full overflow-hidden rounded-lg bg-[var(--cds-color-grey-100)]">
+            {thumbnailUrl ? (
+              <img
+                src={thumbnailUrl}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : null}
+            <div
+              className={`absolute inset-0 flex items-center justify-center ${
+                thumbnailUrl ? 'bg-[var(--cds-color-grey-975)]/40' : 'bg-[var(--cds-color-grey-200)]/80'
               }`}
             >
-              <Icons.Play className="h-8 w-8 shrink-0 translate-x-px" strokeWidth={1.75} aria-hidden />
-            </button>
-          </div>
-          {thumbnailAttribution && thumbnailAttributionUrl ? (
-            <div className="pointer-events-auto absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-10">
-              <a
-                href={thumbnailAttributionUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cds-body-tertiary block text-[11px] leading-snug text-white drop-shadow-sm hover:underline"
+              <button
+                type="button"
+                disabled
+                aria-label={`Play video · ${title}`}
+                className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-transparent p-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-40 ${
+                  thumbnailUrl
+                    ? 'text-white focus-visible:ring-white focus-visible:ring-offset-black/40'
+                    : 'text-[var(--cds-color-grey-975)] focus-visible:ring-[var(--cds-color-blue-500)]'
+                }`}
               >
-                {thumbnailAttribution}
-              </a>
+                <Icons.Play className="h-8 w-8 shrink-0 translate-x-px" strokeWidth={1.75} aria-hidden />
+              </button>
             </div>
-          ) : (
-            <p className="absolute bottom-2 left-2 right-2 cds-body-tertiary text-xs text-[var(--cds-color-grey-700)]">
-              Placeholder video thumbnail · cohort course clip
-            </p>
-          )}
-        </div>
-      )}
+            {thumbnailAttribution && thumbnailAttributionUrl ? (
+              <div className="pointer-events-auto absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-10">
+                <a
+                  href={thumbnailAttributionUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cds-body-tertiary block text-[11px] leading-snug text-white drop-shadow-sm hover:underline"
+                >
+                  {thumbnailAttribution}
+                </a>
+              </div>
+            ) : (
+              <p className="absolute bottom-2 left-2 right-2 cds-body-tertiary text-xs text-[var(--cds-color-grey-700)]">
+                Placeholder video thumbnail · cohort course clip
+              </p>
+            )}
+          </div>
+        ))}
 
       {type === 'article' && (
         <div className="mb-3 flex gap-3 rounded-lg border border-dashed border-[var(--cds-color-grey-200)] bg-[var(--cds-color-grey-25)] p-3">

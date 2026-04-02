@@ -155,8 +155,35 @@ export const COURSERA_BROWSE_DISCIPLINES: CourseraBrowseDiscipline[] = [
   { slug: 'social-sciences', label: 'Social Sciences' },
 ];
 
+/** Initial top-bar discipline selection on Feed (multi-select; empty = “All”). */
+export const DEFAULT_FEED_DISCIPLINE_SLUGS: readonly string[] = ['data-science'];
+
+const KNOWN_DISCIPLINE_SLUGS = new Set(COURSERA_BROWSE_DISCIPLINES.map((d) => d.slug));
+
+export function normalizeFeedDisciplineSlugs(slugs: readonly string[] | undefined): string[] {
+  if (!slugs?.length) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const s of slugs) {
+    if (!KNOWN_DISCIPLINE_SLUGS.has(s) || seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+  }
+  return out;
+}
+
 export function courseraDisciplineLabelForSlug(slug: string): string | undefined {
   return COURSERA_BROWSE_DISCIPLINES.find((d) => d.slug === slug)?.label;
+}
+
+function disciplineLabelsJoined(slugs: string[]): string | undefined {
+  if (slugs.length === 0) return undefined;
+  const parts = slugs.map((s) => courseraDisciplineLabelForSlug(s)).filter(Boolean);
+  return parts.length ? parts.join(' · ') : undefined;
+}
+
+function disciplineCompositeKey(slugs: string[]): string | null {
+  return slugs.length ? [...slugs].sort().join('\0') : null;
 }
 
 /** Cohorts shown as “yours” in the left rail (not in discipline pills). */
@@ -377,21 +404,26 @@ function articleMatchesDisciplineSlug(slug: string, r: PublishedArticleRecord): 
   return kws.some((kw) => h.includes(kw));
 }
 
+function articleMatchesAnyDisciplineSlug(slugs: string[], r: PublishedArticleRecord): boolean {
+  return slugs.some((slug) => articleMatchesDisciplineSlug(slug, r));
+}
+
 function articlePoolForCohort(
   cohortId: FeedCohortId,
-  disciplineSlug: string | null
+  disciplineSlugs: string[]
 ): PublishedArticleRecord[] {
   const pool = PUBLISHED_ARTICLES_BY_COHORT[cohortId];
-  if (!disciplineSlug || pool.length === 0) return pool;
-  const filtered = pool.filter((r) => articleMatchesDisciplineSlug(disciplineSlug, r));
+  if (disciplineSlugs.length === 0 || pool.length === 0) return pool;
+  const filtered = pool.filter((r) => articleMatchesAnyDisciplineSlug(disciplineSlugs, r));
   return filtered.length > 0 ? filtered : pool;
 }
 
 function articlePairForCohort(
   cohortId: FeedCohortId,
-  disciplineSlug: string | null
+  disciplineSlugs: string[],
+  seedKey: string
 ): [PublishedArticleRecord, PublishedArticleRecord] {
-  const pool = articlePoolForCohort(cohortId, disciplineSlug);
+  const pool = articlePoolForCohort(cohortId, disciplineSlugs);
   const n = pool.length;
   const fallback: PublishedArticleRecord = {
     title: 'Coursera articles',
@@ -406,7 +438,7 @@ function articlePairForCohort(
   if (n === 0) return [fallback, fallback];
 
   let h = 2166136261;
-  const seedStr = `coursera-article:${cohortId}:${disciplineSlug ?? 'all'}`;
+  const seedStr = `coursera-article:${cohortId}:${seedKey}`;
   for (let i = 0; i < seedStr.length; i++) {
     h ^= seedStr.charCodeAt(i);
     h = Math.imul(h, 16777619);
@@ -436,11 +468,12 @@ function articleMetaFromType(articleType: string): string {
 function articlePlaceholderFromTemplateKey(
   key: 'a1' | 'a2',
   cohortId: FeedCohortId,
-  disciplineSlug: string | null,
+  disciplineSlugs: string[],
+  seedKey: string,
   lens: string,
   disciplineTag: string
 ): FeedPlaceholderItem {
-  const [first, second] = articlePairForCohort(cohortId, disciplineSlug);
+  const [first, second] = articlePairForCohort(cohortId, disciplineSlugs, seedKey);
   const r = key === 'a1' ? first : second;
   const byline = r.writer ? ` · ${r.writer}` : '';
   return {
@@ -462,7 +495,8 @@ function itemFromTemplate(
   courseHint: string,
   lens: string,
   disciplineTag: string,
-  disciplineSlug: string | null
+  disciplineSlugs: string[],
+  articleSeedKey: string
 ): FeedPlaceholderItem {
   switch (key) {
     case 'v1':
@@ -480,9 +514,9 @@ function itemFromTemplate(
         meta: 'Video · 2:05',
       };
     case 'a1':
-      return articlePlaceholderFromTemplateKey('a1', cohortId, disciplineSlug, lens, disciplineTag);
+      return articlePlaceholderFromTemplateKey('a1', cohortId, disciplineSlugs, articleSeedKey, lens, disciplineTag);
     case 'a2':
-      return articlePlaceholderFromTemplateKey('a2', cohortId, disciplineSlug, lens, disciplineTag);
+      return articlePlaceholderFromTemplateKey('a2', cohortId, disciplineSlugs, articleSeedKey, lens, disciplineTag);
     case 'p1':
       return podcastPlaceholderFromTemplateKey('p1', cohortId, lens, disciplineTag);
     case 'p2':
@@ -534,40 +568,47 @@ function shuffleTemplateKeysWithSeed(keys: FeedMediaTemplateKey[], seed: number)
   return copy;
 }
 
-/** Base cohort rhythm when no browse tag is selected; otherwise a distinct video/article/podcast order per tag. */
-function feedTemplateKeysForCohort(cohortId: FeedCohortId, disciplineSlug: string | null): FeedMediaTemplateKey[] {
+/** Base cohort rhythm when no browse tag is selected; otherwise a distinct video/article/podcast order per tag set. */
+function feedTemplateKeysForCohort(
+  cohortId: FeedCohortId,
+  disciplineComposite: string | null
+): FeedMediaTemplateKey[] {
   const base = FEED_MEDIA_ORDER_BY_COHORT[cohortId];
-  if (!disciplineSlug) return base;
-  const seed = stableDisciplineShuffleSeed(`${cohortId}\0${disciplineSlug}`);
+  if (!disciplineComposite) return base;
+  const seed = stableDisciplineShuffleSeed(`${cohortId}\0${disciplineComposite}`);
   return shuffleTemplateKeysWithSeed(base, seed);
 }
 
 function itemsForCohort(
   id: FeedCohortId,
-  disciplineLabel: string | undefined,
-  disciplineSlug: string | null
+  disciplineSlugs: string[]
 ): FeedPlaceholderItem[] {
   const { theme, courseHint } = cohortFeedCopy[id];
+  const disciplineLabel = disciplineLabelsJoined(disciplineSlugs);
+  const composite = disciplineCompositeKey(disciplineSlugs);
   const lens = lensSuffix(disciplineLabel);
   const disciplineTag = disciplineLabel ? ` · ${disciplineLabel}` : '';
-  const order = feedTemplateKeysForCohort(id, disciplineSlug);
+  const order = feedTemplateKeysForCohort(id, composite);
+  const articleSeedKey = composite ?? 'all';
   return order.map((key) =>
-    itemFromTemplate(key, id, theme, courseHint, lens, disciplineTag, disciplineSlug)
+    itemFromTemplate(key, id, theme, courseHint, lens, disciplineTag, disciplineSlugs, articleSeedKey)
   );
 }
 
 export interface GetFeedPlaceholderItemsOptions {
-  /** Coursera browse discipline label — cohort curation scoped to this career area (not a cohort id). */
-  disciplineLabel?: string;
-  /** Coursera browse discipline slug — varies placeholder media-type order when switching tags. */
-  disciplineSlug?: string | null;
+  /**
+   * Coursera browse discipline slugs (multi-select).
+   * Empty or omitted = no discipline filter (same as “All”).
+   */
+  disciplineSlugs?: string[];
 }
 
 export function getFeedPlaceholderItems(
   cohortId: FeedCohortId,
   options?: GetFeedPlaceholderItemsOptions
 ): FeedPlaceholderItem[] {
-  return itemsForCohort(cohortId, options?.disciplineLabel, options?.disciplineSlug ?? null);
+  const slugs = normalizeFeedDisciplineSlugs(options?.disciplineSlugs);
+  return itemsForCohort(cohortId, slugs);
 }
 
 /** Interleaved items from each cohort for the Snacks “all” stream (one card per cohort per round). */

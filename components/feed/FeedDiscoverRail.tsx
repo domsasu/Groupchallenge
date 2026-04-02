@@ -5,6 +5,7 @@ import {
   JOINED_FEED_COHORT_IDS,
   type FeedCohortId,
 } from '../../constants/feedCohorts';
+import { CohortRailAvatar } from './CohortRailAvatar';
 
 function formatMemberLabel(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M+ members`;
@@ -53,7 +54,10 @@ export const FeedDiscoverRail: React.FC<FeedDiscoverRailProps> = ({
 }) => (
   <aside className="space-y-4">
     <div className="mb-3">
-      <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)]">Cohorts</h2>
+      <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)]">My Cohorts</h2>
+      <p className="cds-body-tertiary mt-1.5 max-w-prose text-[var(--cds-color-grey-600)] leading-relaxed">
+        View top content in your community, and join new cohorts
+      </p>
     </div>
     <ul className="space-y-3">
       {joinedCohortIds.map((id) => {
@@ -71,9 +75,7 @@ export const FeedDiscoverRail: React.FC<FeedDiscoverRailProps> = ({
               }`}
             >
               <div className="flex gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--cds-color-blue-100)] cds-body-tertiary text-xs font-semibold text-[var(--cds-color-blue-800)]">
-                  {c.label.slice(0, 2).toUpperCase()}
-                </div>
+                <CohortRailAvatar cohortId={id} label={c.label} variant="joined" />
                 <div className="min-w-0 flex-1">
                   <p
                     className={`cds-subtitle-sm ${isActive ? 'text-[var(--cds-color-grey-975)]' : 'text-[var(--cds-color-grey-900)]'}`}
@@ -114,15 +116,11 @@ export const FeedDiscoverRail: React.FC<FeedDiscoverRailProps> = ({
                 onClick={() => onSelectCohort(id)}
                 className="flex min-w-0 flex-1 gap-3 text-left transition-colors hover:opacity-[0.92] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-500)] focus-visible:ring-offset-2"
               >
-                <div
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full cds-body-tertiary text-xs font-semibold ${
-                    isActive
-                      ? 'bg-[var(--cds-color-blue-100)] text-[var(--cds-color-blue-800)]'
-                      : 'bg-[var(--cds-color-grey-100)] text-[var(--cds-color-grey-600)]'
-                  }`}
-                >
-                  {c.label.slice(0, 2).toUpperCase()}
-                </div>
+                <CohortRailAvatar
+                  cohortId={id}
+                  label={c.label}
+                  variant={isActive ? 'discoverActive' : 'discoverIdle'}
+                />
                 <div className="min-w-0 flex-1">
                   <p
                     className={`cds-subtitle-sm ${isActive ? 'text-[var(--cds-color-grey-975)]' : 'text-[var(--cds-color-grey-900)]'}`}

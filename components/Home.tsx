@@ -19,6 +19,7 @@ import {
 } from '../skills';
 import { useSiteVariant } from '../context/SiteVariantContext';
 import { MiniFeed } from './MiniFeed';
+import type { FeedCohortId } from '../constants/feedCohorts';
 
 // Assessment sub-skill results type - matches App.tsx
 interface AssessmentSubSkillResults {
@@ -40,7 +41,7 @@ interface HomeProps {
   dailyGoalCompletions?: number;
   assessmentResults?: AssessmentSubSkillResults | null;
   onNavigateToDashboard?: () => void;
-  onNavigateToFeed?: () => void;
+  onNavigateToFeed?: (opts?: { cohortId: FeedCohortId }) => void;
   onTakeSkillAssessment?: () => void;
   dailyTimeGoal?: number;
   introModalClosed?: boolean;
@@ -477,6 +478,18 @@ export const Home: React.FC<HomeProps> = ({
   const [introVideoMuted, setIntroVideoMuted] = useState(true);
   const [introVideoEnded, setIntroVideoEnded] = useState(false);
   const introVideoRef = useRef<HTMLVideoElement>(null);
+  /** Mini-feed reel previews below — pause hero when they’re active on screen. */
+  const [miniFeedPreviewVideosActive, setMiniFeedPreviewVideosActive] = useState(false);
+
+  useEffect(() => {
+    const v = introVideoRef.current;
+    if (!v) return;
+    if (miniFeedPreviewVideosActive) {
+      v.pause();
+    } else if (!introVideoEnded) {
+      void v.play().catch(() => {});
+    }
+  }, [miniFeedPreviewVideosActive, introVideoEnded]);
   
   // Animated percentage counter state
   const [displayedPercentage, setDisplayedPercentage] = useState(0);
@@ -904,7 +917,12 @@ export const Home: React.FC<HomeProps> = ({
       <div className="max-w-[1440px] mx-auto px-6 py-10 space-y-12">
 
         {/* Leaderboard: collapsed strip + full view in drawer */}
-        {onNavigateToFeed ? <MiniFeed onOpenFeed={onNavigateToFeed} /> : null}
+        {onNavigateToFeed ? (
+          <MiniFeed
+            onOpenFeed={onNavigateToFeed}
+            onMiniFeedClipPlayingChange={setMiniFeedPreviewVideosActive}
+          />
+        ) : null}
 
         {/* Course Recommendations - loads in after top section */}
         <div className="animate-widget-slide-up-content">
