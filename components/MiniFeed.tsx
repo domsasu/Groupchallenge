@@ -1,5 +1,5 @@
 /**
- * Mini feed — compact Home preview of the user’s first joined cohort (videos/podcasts only, no articles).
+ * Mini feed — compact Home preview of the user’s first joined cohort (video clips only).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -27,9 +27,6 @@ const MAX_MINI_FEED_ITEMS = 9;
 const MINI_FEED_REEL_SIZE =
   'aspect-[9/16] w-full min-w-0 max-w-[min(100%,calc(55dvh*9/16))] mx-auto shrink-0 overflow-hidden';
 
-/** Vertical reel-style frame (≈9:16) — podcast cover; top radius only (flush with title row, like video). */
-const MINI_FEED_MEDIA_FRAME = `group relative ${MINI_FEED_REEL_SIZE} rounded-t-[var(--cds-border-radius-200)] rounded-b-none bg-[var(--cds-color-grey-100)]`;
-
 /** Video preview: square bottom edge where the clip meets the title row (Reels-style). */
 const MINI_FEED_VIDEO_FRAME = `relative ${MINI_FEED_REEL_SIZE} rounded-t-[var(--cds-border-radius-200)] rounded-b-none bg-[var(--cds-color-grey-100)]`;
 
@@ -55,9 +52,6 @@ const MINI_FEED_CLIP_SRC_BY_VIDEO_INDEX: readonly string[] = [
 /** Each video slot plays this long before rotation advances to the next video in the row. */
 const MINI_FEED_SEGMENT_MS = 5000;
 const MINI_FEED_SEGMENT_SEC = MINI_FEED_SEGMENT_MS / 1000;
-
-/** Coursera Podcast cover art (square); used in place of generic placeholders for podcast rows. */
-export const MINI_FEED_PODCAST_COVER_SRC = '/feed/coursera-podcast-cover.png';
 
 interface MiniFeedClipVideoProps {
   sectionActive: boolean;
@@ -147,114 +141,6 @@ const MiniFeedClipVideo: React.FC<MiniFeedClipVideoProps> = ({
   );
 };
 
-interface PodcastMiniThumbProps {
-  audioUrl?: string;
-  rowKey: string;
-  activeKey: string | null;
-  setActiveKey: (key: string | null) => void;
-}
-
-const PodcastMiniThumb: React.FC<PodcastMiniThumbProps> = ({
-  audioUrl,
-  rowKey,
-  activeKey,
-  setActiveKey,
-}) => {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const isActive = activeKey === rowKey;
-
-  useEffect(() => {
-    if (!isActive) {
-      audioRef.current?.pause();
-      setPlaying(false);
-    }
-  }, [isActive]);
-
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
-    const onEnded = () => {
-      setPlaying(false);
-      setActiveKey(null);
-    };
-    a.addEventListener('play', onPlay);
-    a.addEventListener('pause', onPause);
-    a.addEventListener('ended', onEnded);
-    return () => {
-      a.removeEventListener('play', onPlay);
-      a.removeEventListener('pause', onPause);
-      a.removeEventListener('ended', onEnded);
-    };
-  }, [setActiveKey]);
-
-  const toggle = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!audioUrl) return;
-      const a = audioRef.current;
-      if (!a) return;
-      if (playing) {
-        a.pause();
-        setPlaying(false);
-        setActiveKey(null);
-        return;
-      }
-      setActiveKey(rowKey);
-      void a.play().catch(() => {
-        setPlaying(false);
-        setActiveKey(null);
-      });
-    },
-    [audioUrl, playing, rowKey, setActiveKey]
-  );
-
-  const canPlay = Boolean(audioUrl);
-
-  const playBtn =
-    'inline-flex items-center justify-center rounded-full bg-transparent p-2 text-[var(--cds-color-white)] drop-shadow-[0_1px_3px_rgba(0,0,0,0.55)] transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cds-color-white)]/90 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40';
-
-  return (
-    <div className={MINI_FEED_MEDIA_FRAME}>
-      <img
-        src={MINI_FEED_PODCAST_COVER_SRC}
-        alt=""
-        className="h-full w-full object-cover object-center"
-        loading="lazy"
-        decoding="async"
-      />
-      {canPlay ? (
-        <>
-          <audio ref={audioRef} src={audioUrl} preload="metadata" className="hidden" />
-          <div
-            className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
-              playing
-                ? 'bg-black/35 opacity-100'
-                : 'pointer-events-none bg-black/40 opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={toggle}
-              className={playBtn}
-              aria-label={playing ? 'Pause podcast' : 'Play podcast'}
-            >
-              {playing ? (
-                <Icons.Pause className="h-9 w-9 shrink-0" strokeWidth={1.75} aria-hidden />
-              ) : (
-                <Icons.Play className="h-11 w-11 shrink-0 translate-x-0.5" strokeWidth={1.5} aria-hidden />
-              )}
-            </button>
-          </div>
-        </>
-      ) : null}
-    </div>
-  );
-};
-
 export interface MiniFeedProps {
   /** Opens Community with an optional cohort pre-selected (matches mini-feed cohort). */
   onOpenFeed: (opts?: { cohortId: FeedCohortId }) => void;
@@ -276,13 +162,14 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
   }, [onOpenFeed, firstCohortId]);
 
   /**
-   * Video + podcast only. Lead with the same non-article sequence as Community for the first joined cohort
+   * Video rows only. Lead with the same video sequence as Community for the first joined cohort
    * (e.g. #careerswitchers) and default discipline pills; then fill from the prior cross-cohort pool.
    */
   const allItems = useMemo(() => {
     const seen = new Set<string>();
     const out: FeedPlaceholderItem[] = [];
     const take = (item: FeedPlaceholderItem) => {
+      if (item.type !== 'video') return;
       const k = `${item.type}\0${item.title}`;
       if (seen.has(k)) return;
       seen.add(k);
@@ -292,7 +179,7 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
 
     const lead = getFeedPlaceholderItems(firstCohortId, {
       disciplineSlugs: [...DEFAULT_FEED_DISCIPLINE_SLUGS],
-    }).filter((it) => it.type !== 'article');
+    });
     for (const it of lead) {
       take(it);
       if (out.length >= MAX_MINI_FEED_ITEMS) return out;
@@ -300,7 +187,6 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
 
     for (const id of JOINED_FEED_COHORT_IDS) {
       for (const item of getFeedPlaceholderItems(id, {})) {
-        if (item.type === 'article') continue;
         take(item);
         if (out.length >= MAX_MINI_FEED_ITEMS) return out;
       }
@@ -352,25 +238,14 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
     [allItems, safePage]
   );
 
-  const videoSlotIndices = useMemo(
-    () =>
-      items
-        .map((it, idx) => (it.type === 'video' ? idx : -1))
-        .filter((idx): idx is number => idx >= 0),
-    [items]
-  );
+  const videoSlotIndices = useMemo(() => items.map((_, idx) => idx), [items]);
 
   const [activeVideoSlotQi, setActiveVideoSlotQi] = useState(0);
   const [segmentNonce, setSegmentNonce] = useState(0);
   const [clipUnmuted, setClipUnmuted] = useState(false);
 
-  const [activePodcastKey, setActivePodcastKey] = useState<string | null>(null);
   /** Desktop: hovered video tile grows to 16:9; siblings shrink (bounded by section column). */
   const [expandedVideoTileIndex, setExpandedVideoTileIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    setActivePodcastKey(null);
-  }, [safePage]);
 
   useEffect(() => {
     setExpandedVideoTileIndex(null);
@@ -452,49 +327,23 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
               const rowKey = `mini-${globalIndex}-${item.type}-${item.title.slice(0, 32)}`;
               const openRow = openCommunityFeed;
 
-              const isThisVideoExpanded = item.type === 'video' && expandedVideoTileIndex === i;
+              const isThisVideoExpanded = expandedVideoTileIndex === i;
               const isRowExpanded = expandedVideoTileIndex !== null;
 
-              const tileFlexClass =
-                item.type === 'video' && isThisVideoExpanded
-                  ? 'sm:flex-[2.35_1_0%] sm:min-w-0 sm:z-10'
-                  : isRowExpanded
-                    ? 'sm:flex-[0.68_1_0%] sm:min-w-[3.25rem]'
-                    : 'sm:flex-1 sm:min-w-0';
+              const tileFlexClass = isThisVideoExpanded
+                ? 'sm:flex-[2.35_1_0%] sm:min-w-0 sm:z-10'
+                : isRowExpanded
+                  ? 'sm:flex-[0.68_1_0%] sm:min-w-[3.25rem]'
+                  : 'sm:flex-1 sm:min-w-0';
 
               const tileBase =
                 `flex h-full min-w-0 flex-col overflow-hidden rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] text-left transition-colors hover:border-[var(--cds-color-grey-200)] hover:bg-[var(--cds-color-grey-50)] sm:transition-[flex-grow,flex-basis] sm:duration-300 sm:ease-out ${tileFlexClass}`;
 
-              if (item.type === 'podcast') {
-                return (
-                  <article key={rowKey} className={tileBase}>
-                    <PodcastMiniThumb
-                      audioUrl={item.podcastAudioUrl}
-                      rowKey={rowKey}
-                      activeKey={activePodcastKey}
-                      setActiveKey={setActivePodcastKey}
-                    />
-                    <button
-                      type="button"
-                      onClick={openRow}
-                      className="flex min-h-0 flex-1 flex-col justify-end px-2 pb-2 pt-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--cds-color-blue-700)]"
-                    >
-                      <p className="cds-body-secondary line-clamp-2 text-[var(--cds-color-grey-975)] hover:text-[var(--cds-color-blue-800)]">
-                        {item.title}
-                      </p>
-                    </button>
-                  </article>
-                );
-              }
-
               const isActiveVideoSegment =
-                item.type === 'video' &&
-                (expandedVideoTileIndex !== null
+                expandedVideoTileIndex !== null
                   ? i === expandedVideoTileIndex
-                  : i === activeVideoItemIndex);
-              const videoOrdinalAmongVideos = items
-                .slice(0, i)
-                .filter((it) => it.type === 'video').length;
+                  : i === activeVideoItemIndex;
+              const videoOrdinalAmongVideos = i;
               const clipSrc =
                 dataScienceLensActive &&
                 videoOrdinalAmongVideos < FEED_DATA_SCIENCE_PREVIEW_VIDEOS.length
