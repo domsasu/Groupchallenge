@@ -62,7 +62,7 @@ export const FEED_COHORT_META: Record<FeedCohortId, FeedCohortMeta> = {
   design: {
     id: 'design',
     label: 'Design',
-    pillLabel: 'Design',
+    pillLabel: '#design',
     memberCount: 128000,
     shortDescription:
       'Product design, UX research, and visual craft—snippets from top UX programs.',

@@ -20,6 +20,7 @@ import {
 import { useSiteVariant } from '../context/SiteVariantContext';
 import { MiniFeed } from './MiniFeed';
 import type { FeedCohortId } from '../constants/feedCohorts';
+import type { CommunitySurface } from './FeedPage';
 
 // Assessment sub-skill results type - matches App.tsx
 interface AssessmentSubSkillResults {
@@ -41,7 +42,7 @@ interface HomeProps {
   dailyGoalCompletions?: number;
   assessmentResults?: AssessmentSubSkillResults | null;
   onNavigateToDashboard?: () => void;
-  onNavigateToFeed?: (opts?: { cohortId: FeedCohortId }) => void;
+  onNavigateToFeed?: (opts?: { cohortId?: FeedCohortId; tab?: CommunitySurface }) => void;
   onTakeSkillAssessment?: () => void;
   dailyTimeGoal?: number;
   introModalClosed?: boolean;
@@ -916,7 +917,9 @@ export const Home: React.FC<HomeProps> = ({
       {/* White Content Area */}
       <div className="max-w-[1440px] mx-auto px-6 py-10 space-y-12">
 
-        {/* Leaderboard: collapsed strip + full view in drawer */}
+        <HomeLeaderboard selectedCohort={selectedCohort} onSelectCohort={setSelectedCohort} />
+
+        {/* Mini feed — below leaderboard; See all opens Community */}
         {onNavigateToFeed ? (
           <MiniFeed
             onOpenFeed={onNavigateToFeed}
@@ -1146,8 +1149,6 @@ export const Home: React.FC<HomeProps> = ({
             </button>
           </div>
         </div>
-
-        <HomeLeaderboard selectedCohort={selectedCohort} onSelectCohort={setSelectedCohort} />
 
       </div>
     </div>

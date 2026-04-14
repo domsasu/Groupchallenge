@@ -16,6 +16,7 @@ import {
 } from '../constants/feedPreviewVideos';
 import { Icons } from './Icons';
 import { isFeedElementFullyVisible } from './feed/feedViewport';
+import type { CommunitySurface } from './FeedPage';
 
 const PAGE_SIZE = 5;
 const MAX_MINI_FEED_ITEMS = 9;
@@ -143,7 +144,7 @@ const MiniFeedClipVideo: React.FC<MiniFeedClipVideoProps> = ({
 
 export interface MiniFeedProps {
   /** Opens Community with an optional cohort pre-selected (matches mini-feed cohort). */
-  onOpenFeed: (opts?: { cohortId: FeedCohortId }) => void;
+  onOpenFeed: (opts?: { cohortId?: FeedCohortId; tab?: CommunitySurface }) => void;
   /**
    * When the mini-feed section is fully on-screen and at least one preview video is cycling,
    * `true` so the parent can pause competing hero autoplay (e.g. Home intro video).

@@ -14,13 +14,18 @@ import { FeedDiscoverRail } from './feed/FeedDiscoverRail';
 import { FeedTimeline } from './feed/FeedTimeline';
 import { Icons } from './Icons';
 import { enrichFeedVideoThumbnails } from '../services/unsplashThumbnails';
+import { ChallengesView } from './challenges/ChallengesView';
+
+export type CommunitySurface = 'feed' | 'challenges';
 
 export interface FeedPageProps {
   /** When opening Community from Home mini-feed, select this cohort (same as mini-feed lead cohort). */
   initialSelectedCohortId?: FeedCohortId;
+  /** Open Community on Feed vs Challenges (e.g. deep link from Home). */
+  initialCommunityTab?: CommunitySurface;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, initialCommunityTab }) => {
   const { variant, surface } = useSiteVariant();
   /** `null` = All snacks stream (mixed cohorts). */
   const [selectedCohortId, setSelectedCohortId] = useState<FeedCohortId | null>(
@@ -32,6 +37,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId }) =
   ]);
   /** Cohorts the user joined via the rail CTA (moved from discover into “yours”). */
   const [joinedViaRailIds, setJoinedViaRailIds] = useState<FeedCohortId[]>([]);
+
+  const [communitySurface, setCommunitySurface] = useState<CommunitySurface>(
+    () => initialCommunityTab ?? 'feed'
+  );
+
+  useEffect(() => {
+    if (initialCommunityTab) setCommunitySurface(initialCommunityTab);
+  }, [initialCommunityTab]);
 
   const railJoinedIds = useMemo(
     () => [...JOINED_FEED_COHORT_IDS, ...joinedViaRailIds],
@@ -86,59 +99,105 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId }) =
         data-site-variant={variant}
       >
         <div className="relative z-10 max-w-[1440px] mx-auto px-4 md:px-6 py-4 md:py-5">
-          <div className="mb-5 flex min-w-0 items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <FeedCohortPills
-                variant="coursera"
-                selectedSlugs={activeDisciplineSlugs}
-                onToggleSlug={(slug) => {
-                  setActiveDisciplineSlugs((prev) =>
-                    prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-                  );
-                }}
-                onClearDisciplines={() => setActiveDisciplineSlugs([])}
-              />
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
+          {/* Primary: Feed vs Challenges — underline style (matches My Learning tabs) */}
+          <div className="sticky top-0 z-10 -mx-4 md:-mx-6 mb-5 border-b border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] px-4 md:px-6">
+            <div className="flex gap-6" role="tablist" aria-label="Community">
               <button
                 type="button"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-transparent p-0 text-[#111111] transition-colors hover:bg-[var(--cds-color-grey-100)]"
-                aria-label="Filters (placeholder)"
+                role="tab"
+                id="community-tab-feed"
+                aria-controls="community-panel-feed"
+                aria-selected={communitySurface === 'feed'}
+                tabIndex={communitySurface === 'feed' ? 0 : -1}
+                onClick={() => setCommunitySurface('feed')}
+                className={`cds-body-secondary border-b-2 py-3 transition-colors ${
+                  communitySurface === 'feed'
+                    ? 'border-[var(--cds-color-grey-975)] font-semibold text-[var(--cds-color-grey-975)]'
+                    : 'border-transparent text-[var(--cds-color-grey-600)] hover:text-[var(--cds-color-grey-975)]'
+                }`}
               >
-                <Icons.FilterSliders className="h-5 w-5 text-[#111111]" strokeWidth={2} aria-hidden />
+                Feed
               </button>
               <button
                 type="button"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-transparent p-0 text-[#111111] transition-colors hover:bg-[var(--cds-color-grey-100)]"
-                aria-label="Search (placeholder)"
+                role="tab"
+                id="community-tab-challenges"
+                aria-controls="community-panel-challenges"
+                aria-selected={communitySurface === 'challenges'}
+                tabIndex={communitySurface === 'challenges' ? 0 : -1}
+                onClick={() => setCommunitySurface('challenges')}
+                className={`cds-body-secondary border-b-2 py-3 transition-colors ${
+                  communitySurface === 'challenges'
+                    ? 'border-[var(--cds-color-grey-975)] font-semibold text-[var(--cds-color-grey-975)]'
+                    : 'border-transparent text-[var(--cds-color-grey-600)] hover:text-[var(--cds-color-grey-975)]'
+                }`}
               >
-                <Icons.Search className="h-5 w-5 text-[#111111]" strokeWidth={2} aria-hidden />
+                Challenges
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-x-6 lg:gap-y-4">
-            <div className="order-1 min-w-0 lg:col-span-9">
-              <FeedTimeline
-                key={`${selectedCohortId ?? 'all'}-${disciplineKey}`}
-                cohortId={selectedCohortId ?? 'all'}
-                items={timelineItems}
-                activeDisciplineSlugs={activeDisciplineSlugs}
-              />
+          {communitySurface === 'feed' ? (
+            <div id="community-panel-feed" role="tabpanel" aria-labelledby="community-tab-feed">
+              <div className="mb-5 flex min-w-0 items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <FeedCohortPills
+                    variant="coursera"
+                    selectedSlugs={activeDisciplineSlugs}
+                    onToggleSlug={(slug) => {
+                      setActiveDisciplineSlugs((prev) =>
+                        prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+                      );
+                    }}
+                    onClearDisciplines={() => setActiveDisciplineSlugs([])}
+                  />
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-transparent p-0 text-[#111111] transition-colors hover:bg-[var(--cds-color-grey-100)]"
+                    aria-label="Filters (placeholder)"
+                  >
+                    <Icons.FilterSliders className="h-5 w-5 text-[#111111]" strokeWidth={2} aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-transparent p-0 text-[#111111] transition-colors hover:bg-[var(--cds-color-grey-100)]"
+                    aria-label="Search (placeholder)"
+                  >
+                    <Icons.Search className="h-5 w-5 text-[#111111]" strokeWidth={2} aria-hidden />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-x-6 lg:gap-y-4">
+                <div className="order-1 min-w-0 lg:col-span-9">
+                  <FeedTimeline
+                    key={`${selectedCohortId ?? 'all'}-${disciplineKey}`}
+                    cohortId={selectedCohortId ?? 'all'}
+                    items={timelineItems}
+                    activeDisciplineSlugs={activeDisciplineSlugs}
+                  />
+                </div>
+                <div className="order-2 min-w-0 lg:col-span-3">
+                  <FeedDiscoverRail
+                    activeCohortId={selectedCohortId}
+                    onSelectCohort={setSelectedCohortId}
+                    joinedCohortIds={railJoinedIds}
+                    joinableCohortIds={railJoinableIds}
+                    onJoinCohort={(id) => {
+                      setJoinedViaRailIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+                      setSelectedCohortId(id);
+                    }}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="order-2 min-w-0 lg:col-span-3">
-              <FeedDiscoverRail
-                activeCohortId={selectedCohortId}
-                onSelectCohort={setSelectedCohortId}
-                joinedCohortIds={railJoinedIds}
-                joinableCohortIds={railJoinableIds}
-                onJoinCohort={(id) => {
-                  setJoinedViaRailIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-                  setSelectedCohortId(id);
-                }}
-              />
+          ) : (
+            <div role="tabpanel" aria-labelledby="community-tab-challenges" id="community-panel-challenges">
+              <ChallengesView />
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

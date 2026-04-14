@@ -16,7 +16,7 @@ import { PlanConfirmationModal } from './components/PlanConfirmationModal';
 import { SkillProgressModal } from './components/SkillProgressModal';
 import { MyLearning } from './components/MyLearning';
 import { Home } from './components/Home';
-import { FeedPage } from './components/FeedPage';
+import { FeedPage, type CommunitySurface } from './components/FeedPage';
 import { AssessmentStart } from './components/AssessmentStart';
 import { AssessmentResult } from './components/AssessmentResult';
 import { BadgeAchievement } from './components/BadgeAchievement';
@@ -694,14 +694,21 @@ const App: React.FC = () => {
   };
 
   const [feedInitialCohortId, setFeedInitialCohortId] = useState<FeedCohortId | undefined>(undefined);
+  const [feedInitialCommunityTab, setFeedInitialCommunityTab] = useState<CommunitySurface | undefined>(
+    undefined
+  );
 
-  const navigateToFeed = useCallback((opts?: { cohortId: FeedCohortId }) => {
+  const navigateToFeed = useCallback((opts?: { cohortId?: FeedCohortId; tab?: CommunitySurface }) => {
     if (opts?.cohortId) setFeedInitialCohortId(opts.cohortId);
+    if (opts?.tab) setFeedInitialCommunityTab(opts.tab);
     setCurrentView('feed');
   }, []);
 
   useEffect(() => {
-    if (currentView !== 'feed') setFeedInitialCohortId(undefined);
+    if (currentView !== 'feed') {
+      setFeedInitialCohortId(undefined);
+      setFeedInitialCommunityTab(undefined);
+    }
   }, [currentView]);
 
   const navigateToAssessment = () => {
@@ -787,7 +794,10 @@ const App: React.FC = () => {
         )}
 
         {currentView === 'feed' && (
-          <FeedPage initialSelectedCohortId={feedInitialCohortId} />
+          <FeedPage
+            initialSelectedCohortId={feedInitialCohortId}
+            initialCommunityTab={feedInitialCommunityTab}
+          />
         )}
 
         {currentView === 'learning' && (
