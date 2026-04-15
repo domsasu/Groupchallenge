@@ -159,7 +159,7 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
   const dataScienceLensActive = DEFAULT_FEED_DISCIPLINE_SLUGS.includes(DATA_SCIENCE_DISCIPLINE_SLUG);
 
   const openCommunityFeed = useCallback(() => {
-    onOpenFeed({ cohortId: firstCohortId });
+    onOpenFeed({ cohortId: firstCohortId, tab: 'feed' });
   }, [onOpenFeed, firstCohortId]);
 
   /**

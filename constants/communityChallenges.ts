@@ -7,6 +7,9 @@ import { JOINED_FEED_COHORT_IDS, type FeedCohortId } from './feedCohorts';
 
 export type ChallengeLifecycle = 'active' | 'upcoming' | 'completed';
 
+/** Visual tier for strip card art + labels (Silver / Gold / Platinum / Diamond). */
+export type ChallengeVisualTier = 'silver' | 'gold' | 'platinum' | 'diamond';
+
 export interface ChallengeMilestone {
   id: string;
   label: string;
@@ -60,6 +63,10 @@ export interface CommunityChallenge {
     shareoutPeerCount: number;
   };
   members?: ChallengeMember[];
+  /** Tier shown on challenge strip card illustration and footer (independent of milestone naming). */
+  visualTier: ChallengeVisualTier;
+  /** Progress toward current challenge goal, 0–1 (drives progress bar on strip card). */
+  cardProgress: number;
 }
 
 export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
@@ -94,6 +101,8 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
       [2, 3],
       [5],
     ],
+    visualTier: 'gold',
+    cardProgress: 0.55,
   },
   {
     id: 'ch-upcoming-enrolled-streak',
@@ -124,6 +133,8 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
       [2, 4, 5, 6],
       [1, 3],
     ],
+    visualTier: 'silver',
+    cardProgress: 0,
   },
   {
     id: 'ch-upcoming-ai-hours',
@@ -155,6 +166,8 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
       [1],
       [4],
     ],
+    visualTier: 'platinum',
+    cardProgress: 0.12,
   },
   {
     id: 'ch-completed-enrolled-relay',
@@ -187,6 +200,8 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     },
     currentTierIndex: 2,
     groupsAtMilestoneTier: [[], [], [1, 2, 3, 4, 5]],
+    visualTier: 'diamond',
+    cardProgress: 1,
     members: [
       { id: 'u1', displayName: 'Maya Chen', contribution: 420, highFiveCount: 18, isCurrentUser: false },
       { id: 'u2', displayName: 'You', contribution: 310, highFiveCount: 12, isCurrentUser: true },
@@ -196,6 +211,43 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     ],
   },
 ];
+
+function parseChallengeLocalDate(isoDate: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  if (!m) return new Date(isoDate);
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+/**
+ * Hero pill on slim challenge cards — days left, start date, or completion date.
+ */
+export function formatChallengeCardHeroLabel(challenge: CommunityChallenge): string {
+  switch (challenge.lifecycle) {
+    case 'active': {
+      let days = challenge.daysLeft;
+      if (days === undefined) {
+        const end = parseChallengeLocalDate(challenge.endsAt);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        days = Math.ceil((end.getTime() - today.getTime()) / 86400000);
+      }
+      if (days <= 0) return 'Ends today';
+      if (days === 1) return '1 day left';
+      return `${days} days left`;
+    }
+    case 'upcoming': {
+      const d = parseChallengeLocalDate(challenge.startsAt);
+      const s = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      return `Starts ${s}`;
+    }
+    case 'completed': {
+      const d = parseChallengeLocalDate(challenge.endsAt);
+      const s = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      return `Completed ${s}`;
+    }
+  }
+}
 
 function ordinalPlace(n: number): string {
   const j = n % 10;

@@ -39,7 +39,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
   const [joinedViaRailIds, setJoinedViaRailIds] = useState<FeedCohortId[]>([]);
 
   const [communitySurface, setCommunitySurface] = useState<CommunitySurface>(
-    () => initialCommunityTab ?? 'feed'
+    () => initialCommunityTab ?? 'challenges'
   );
 
   useEffect(() => {
@@ -98,26 +98,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
         className={`relative bg-[var(--cds-color-grey-25)] min-h-[min(100%,calc(100vh-5rem))] ${surface.feedBackdropExtraClassName}`}
         data-site-variant={variant}
       >
-        <div className="relative z-10 max-w-[1440px] mx-auto px-4 md:px-6 py-4 md:py-5">
-          {/* Primary: Feed vs Challenges — underline style (matches My Learning tabs) */}
-          <div className="sticky top-0 z-10 -mx-4 md:-mx-6 mb-5 border-b border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] px-4 md:px-6">
+        <div className="relative z-10 max-w-[1440px] mx-auto px-4 md:px-6 pb-4 md:pb-5 pt-0">
+          {/* Primary: Feed vs Challenges — underline style (matches My Learning tabs). Top padding lives on the white bar so no grey-25 gap sits above the tabs. */}
+          <div className="sticky top-0 z-10 -mx-4 md:-mx-6 mb-5 border-b border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] px-4 md:px-6 pt-4 md:pt-5">
             <div className="flex gap-6" role="tablist" aria-label="Community">
-              <button
-                type="button"
-                role="tab"
-                id="community-tab-feed"
-                aria-controls="community-panel-feed"
-                aria-selected={communitySurface === 'feed'}
-                tabIndex={communitySurface === 'feed' ? 0 : -1}
-                onClick={() => setCommunitySurface('feed')}
-                className={`cds-body-secondary border-b-2 py-3 transition-colors ${
-                  communitySurface === 'feed'
-                    ? 'border-[var(--cds-color-grey-975)] font-semibold text-[var(--cds-color-grey-975)]'
-                    : 'border-transparent text-[var(--cds-color-grey-600)] hover:text-[var(--cds-color-grey-975)]'
-                }`}
-              >
-                Feed
-              </button>
               <button
                 type="button"
                 role="tab"
@@ -133,6 +117,22 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
                 }`}
               >
                 Challenges
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="community-tab-feed"
+                aria-controls="community-panel-feed"
+                aria-selected={communitySurface === 'feed'}
+                tabIndex={communitySurface === 'feed' ? 0 : -1}
+                onClick={() => setCommunitySurface('feed')}
+                className={`cds-body-secondary border-b-2 py-3 transition-colors ${
+                  communitySurface === 'feed'
+                    ? 'border-[var(--cds-color-grey-975)] font-semibold text-[var(--cds-color-grey-975)]'
+                    : 'border-transparent text-[var(--cds-color-grey-600)] hover:text-[var(--cds-color-grey-975)]'
+                }`}
+              >
+                Feed
               </button>
             </div>
           </div>

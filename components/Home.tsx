@@ -20,6 +20,12 @@ import {
 import { useSiteVariant } from '../context/SiteVariantContext';
 import { MiniFeed } from './MiniFeed';
 import type { FeedCohortId } from '../constants/feedCohorts';
+import { FEED_COHORT_META } from '../constants/feedCohorts';
+import {
+  formatChallengeCardHeroLabel,
+  formatGroupPlaceLine,
+  MOCK_COMMUNITY_CHALLENGES,
+} from '../constants/communityChallenges';
 import type { CommunitySurface } from './FeedPage';
 
 // Assessment sub-skill results type - matches App.tsx
@@ -376,77 +382,177 @@ const collectionCourses = [
   }
 ];
 
+/** Hero tint for home challenge tile — matches community challenge card cohort colors. */
+const HOME_CHALLENGE_HERO: Record<CohortId, string> = {
+  careerswitchers: 'from-slate-950 via-blue-950 to-sky-600',
+  enrolled: 'from-violet-950 via-purple-900 to-fuchsia-600',
+  ai: 'from-zinc-950 via-emerald-950 to-teal-500',
+};
+
+function HomeActiveChallengePanel({
+  selectedCohort,
+  onNavigateToFeed,
+}: {
+  selectedCohort: CohortId;
+  onNavigateToFeed?: (opts?: { cohortId?: FeedCohortId; tab?: CommunitySurface }) => void;
+}) {
+  const cohortKey = selectedCohort as FeedCohortId;
+  const meta = FEED_COHORT_META[cohortKey];
+
+  const challenge = useMemo(() => {
+    const list = MOCK_COMMUNITY_CHALLENGES.filter((c) => c.cohortId === cohortKey);
+    return list.find((c) => c.lifecycle === 'active') ?? list.find((c) => c.lifecycle === 'upcoming') ?? null;
+  }, [cohortKey]);
+
+  const heroClass = HOME_CHALLENGE_HERO[selectedCohort];
+  const openCommunity = () =>
+    onNavigateToFeed?.({ tab: 'challenges', cohortId: cohortKey });
+
+  const lifecyclePillClass =
+    challenge && challenge.lifecycle === 'active'
+      ? 'bg-emerald-500/90 text-white'
+      : challenge && challenge.lifecycle === 'upcoming'
+        ? 'bg-amber-500/90 text-white'
+        : 'bg-white/20 text-white backdrop-blur-sm';
+
+  return (
+    <div
+      className="relative mx-auto aspect-square w-full max-w-[280px] shrink-0 overflow-hidden rounded-[var(--cds-border-radius-200)] border-2 border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-sm transition-colors hover:border-[var(--cds-color-blue-700)] lg:mx-0 lg:max-w-none lg:w-[min(280px,26vw)]"
+      aria-label="Cohort challenge"
+    >
+      {!challenge ? (
+        <div className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center">
+          <p className="cds-body-secondary text-[var(--cds-color-grey-700)]">No scheduled challenge for this cohort.</p>
+          {onNavigateToFeed && (
+            <button
+              type="button"
+              onClick={openCommunity}
+              className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] px-3 py-1.5 text-xs font-medium text-[var(--cds-color-blue-700)] hover:bg-[var(--cds-color-grey-25)]"
+            >
+              Open Community
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex h-full min-h-0 flex-col">
+          <div
+            className={`relative shrink-0 bg-gradient-to-br ${heroClass} px-3 pb-3 pt-3`}
+            style={{ flex: '0 0 38%' }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" aria-hidden />
+            <div className="relative flex h-full flex-col justify-between gap-2">
+              <span
+                className={`line-clamp-2 max-w-[min(100%,11rem)] rounded-md px-1.5 py-0.5 text-[9px] font-semibold leading-tight ${lifecyclePillClass}`}
+              >
+                {formatChallengeCardHeroLabel(challenge)}
+              </span>
+              <p className="line-clamp-2 text-sm font-semibold leading-snug text-white drop-shadow-sm">{challenge.name}</p>
+            </div>
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-[var(--cds-color-blue-25)] px-2 py-0.5 text-[11px] font-medium text-[var(--cds-color-grey-975)]">
+                {meta.pillLabel}
+              </span>
+            </div>
+            {challenge.lifecycle !== 'upcoming' && (
+              <p className="text-[11px] leading-snug text-[var(--cds-color-grey-600)]">{formatGroupPlaceLine(challenge)}</p>
+            )}
+            {onNavigateToFeed && (
+              <button
+                type="button"
+                onClick={openCommunity}
+                className="mt-auto w-full rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-grey-975)] px-3 py-2 text-center text-xs font-semibold text-white hover:bg-[var(--cds-color-grey-800)]"
+              >
+                View challenge
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HomeLeaderboard({
   selectedCohort,
   onSelectCohort,
+  onNavigateToFeed,
 }: {
   selectedCohort: CohortId;
   onSelectCohort: (id: CohortId) => void;
+  onNavigateToFeed?: (opts?: { cohortId?: FeedCohortId; tab?: CommunitySurface }) => void;
 }) {
   const board = COHORT_LEADERBOARD[selectedCohort];
 
-  const fullLeaderboardPanel = (
-    <>
-      <div className="mb-3 flex items-center gap-3 flex-wrap">
-        <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)]">
-          Leaderboard
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {COHORTS.map((cohort) => {
-            const isActive = cohort.id === selectedCohort;
-            return (
-              <button
-                key={cohort.id}
-                type="button"
-                onClick={() => onSelectCohort(cohort.id)}
-                className={`cds-body-secondary h-8 rounded-[var(--cds-border-radius-400)] px-3 py-1 transition-colors ${
-                  isActive
-                    ? 'bg-[var(--cds-color-grey-800)] text-[var(--cds-color-white)]'
-                    : 'bg-[var(--cds-color-white)] border border-[var(--cds-color-grey-100)] text-[var(--cds-color-grey-975)] hover:bg-[var(--cds-color-grey-25)]'
-                }`}
-              >
-                {cohort.label}{' '}
-                <span className={isActive ? 'text-[var(--cds-color-grey-200)]' : 'text-[var(--cds-color-grey-600)]'}>
-                  {cohort.members.toLocaleString()}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <button
-          type="button"
-          className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--cds-color-grey-50)] text-[var(--cds-color-grey-600)] hover:text-[var(--cds-color-grey-975)] transition-colors ml-auto"
-          aria-label="Join a cohort"
-        >
-          <span className="material-symbols-rounded" style={{ fontSize: 20 }}>add</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
-          <p className="cds-body-tertiary text-[var(--cds-color-grey-600)] mb-1.5">Top 3</p>
-          <div className="space-y-1">
-            {board.top3.map((p) => (
-              <MiniLeaderboardRow key={p.rank} peer={p} isUser={p.rank === board.userRank} isMedal />
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
-          <p className="cds-body-tertiary text-[var(--cds-color-grey-600)] mb-1.5">Around you</p>
-          <div className="space-y-1">
-            {board.around.map((p) => (
-              <MiniLeaderboardRow key={p.rank} peer={p} isUser={p.rank === board.userRank} isMedal={false} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-
   return (
     <div className="rounded-[var(--cds-border-radius-200)] bg-[var(--cds-color-white)] p-4 sm:p-5">
-      {fullLeaderboardPanel}
+      {/* lg:items-end — challenge tile bottom aligns with leaderboard column bottom; + stays within leaderboard width */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)]">Leaderboard</h2>
+            <div className="flex min-w-0 flex-wrap gap-2">
+              {COHORTS.map((cohort) => {
+                const isActive = cohort.id === selectedCohort;
+                return (
+                  <button
+                    key={cohort.id}
+                    type="button"
+                    onClick={() => onSelectCohort(cohort.id)}
+                    className={`cds-body-secondary h-8 rounded-[var(--cds-border-radius-400)] px-3 py-1 transition-colors ${
+                      isActive
+                        ? 'bg-[var(--cds-color-grey-800)] text-[var(--cds-color-white)]'
+                        : 'bg-[var(--cds-color-white)] border border-[var(--cds-color-grey-100)] text-[var(--cds-color-grey-975)] hover:bg-[var(--cds-color-grey-25)]'
+                    }`}
+                  >
+                    {cohort.label}{' '}
+                    <span className={isActive ? 'text-[var(--cds-color-grey-200)]' : 'text-[var(--cds-color-grey-600)]'}>
+                      {cohort.members.toLocaleString()}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--cds-color-grey-600)] transition-colors hover:bg-[var(--cds-color-grey-50)] hover:text-[var(--cds-color-grey-975)]"
+              aria-label="Join a cohort"
+            >
+              <span className="material-symbols-rounded" style={{ fontSize: 20 }}>
+                add
+              </span>
+            </button>
+          </div>
+
+          <p className="max-w-3xl cds-body-tertiary text-[var(--cds-color-grey-600)]">
+            Rankings use total learning hours logged in the cohort you have selected, for the current leaderboard period. Top 3 lists
+            the highest-ranked learners; Around you lists peers close to your rank.
+          </p>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
+              <p className="cds-body-tertiary mb-1.5 text-[var(--cds-color-grey-600)]">Top 3</p>
+              <div className="space-y-1">
+                {board.top3.map((p) => (
+                  <MiniLeaderboardRow key={p.rank} peer={p} isUser={p.rank === board.userRank} isMedal />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
+              <p className="cds-body-tertiary mb-1.5 text-[var(--cds-color-grey-600)]">Around you</p>
+              <div className="space-y-1">
+                {board.around.map((p) => (
+                  <MiniLeaderboardRow key={p.rank} peer={p} isUser={p.rank === board.userRank} isMedal={false} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <HomeActiveChallengePanel selectedCohort={selectedCohort} onNavigateToFeed={onNavigateToFeed} />
+      </div>
     </div>
   );
 }
@@ -917,7 +1023,11 @@ export const Home: React.FC<HomeProps> = ({
       {/* White Content Area */}
       <div className="max-w-[1440px] mx-auto px-6 py-10 space-y-12">
 
-        <HomeLeaderboard selectedCohort={selectedCohort} onSelectCohort={setSelectedCohort} />
+        <HomeLeaderboard
+          selectedCohort={selectedCohort}
+          onSelectCohort={setSelectedCohort}
+          onNavigateToFeed={onNavigateToFeed}
+        />
 
         {/* Mini feed — below leaderboard; See all opens Community */}
         {onNavigateToFeed ? (

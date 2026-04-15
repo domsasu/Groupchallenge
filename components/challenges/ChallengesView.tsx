@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   MOCK_COMMUNITY_CHALLENGES,
   challengesForLifecycle,
@@ -8,13 +8,20 @@ import {
 } from '../../constants/communityChallenges';
 import { FEED_COHORT_META, JOINED_FEED_COHORT_IDS, type FeedCohortId } from '../../constants/feedCohorts';
 import { ChallengeCard } from './ChallengeCard';
+import { ChallengeFullDetail } from './ChallengeFullDetail';
 import { ChallengeShareoutModal } from './ChallengeShareoutModal';
+import { SuggestChallengeStripCard } from './SuggestChallengeStripCard';
 
 const STATUS_TABS: { id: ChallengeLifecycle; label: string }[] = [
   { id: 'active', label: 'Active' },
   { id: 'upcoming', label: 'Upcoming' },
   { id: 'completed', label: 'Completed' },
 ];
+
+type ChallengeSelection =
+  | { kind: 'challenge'; id: string }
+  | { kind: 'suggest'; cohortId: FeedCohortId }
+  | null;
 
 function initHighFiveMap(challenge: CommunityChallenge | undefined): Record<string, number> {
   const out: Record<string, number> = {};
@@ -31,9 +38,35 @@ export const ChallengesView: React.FC = () => {
   );
   const [statusTab, setStatusTab] = useState<ChallengeLifecycle>('active');
   const [shareoutId, setShareoutId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<ChallengeSelection>(() => {
+    const list = sortChallengesByJoinedCohortOrder(challengesForLifecycle(MOCK_COMMUNITY_CHALLENGES, 'active'));
+    return list.length > 0 ? { kind: 'challenge', id: list[0].id } : null;
+  });
   const [highFiveByMemberId, setHighFiveByMemberId] = useState<Record<string, number>>(() =>
     initHighFiveMap(MOCK_COMMUNITY_CHALLENGES.find((c) => c.lifecycle === 'completed'))
   );
+
+  /** Auto-select the first strip card when switching tabs so details always show without an extra click. */
+  useEffect(() => {
+    const list = sortChallengesByJoinedCohortOrder(challengesForLifecycle(challenges, statusTab));
+    if (list.length > 0) {
+      setSelection({ kind: 'challenge', id: list[0].id });
+      return;
+    }
+    if (statusTab === 'upcoming') {
+      const withUpcoming = new Set(
+        challenges.filter((c) => c.lifecycle === 'upcoming').map((c) => c.cohortId)
+      );
+      const missing = JOINED_FEED_COHORT_IDS.filter((id) => !withUpcoming.has(id));
+      if (missing.length > 0) {
+        setSelection({ kind: 'suggest', cohortId: missing[0] });
+        return;
+      }
+    }
+    setSelection(null);
+    // Only re-run when the tab changes — avoid resetting selection when `challenges` updates (e.g. opt-in toggle).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [statusTab]);
 
   const shareoutChallenge = useMemo(
     () => (shareoutId ? challenges.find((c) => c.id === shareoutId) ?? null : null),
@@ -46,7 +79,6 @@ export const ChallengesView: React.FC = () => {
     [challenges, statusTab]
   );
 
-  /** Joined cohorts with no challenge in Upcoming (e.g. cohort only has Active). */
   const cohortIdsWithoutUpcomingChallenge = useMemo(() => {
     if (statusTab !== 'upcoming') return [];
     const withUpcoming = new Set(
@@ -54,6 +86,15 @@ export const ChallengesView: React.FC = () => {
     );
     return JOINED_FEED_COHORT_IDS.filter((id) => !withUpcoming.has(id));
   }, [challenges, statusTab]);
+
+  const hasChallengeStrip = filtered.length > 0;
+  const hasSuggestStrip = statusTab === 'upcoming' && cohortIdsWithoutUpcomingChallenge.length > 0;
+  const hasAnyStrip = hasChallengeStrip || hasSuggestStrip;
+
+  const challengeForDetail = useMemo(() => {
+    if (!selection || selection.kind !== 'challenge') return null;
+    return challenges.find((c) => c.id === selection.id) ?? null;
+  }, [selection, challenges]);
 
   const suggestChallengeForCohort = useCallback((cohortLabel: string) => {
     window.alert(
@@ -88,14 +129,19 @@ export const ChallengesView: React.FC = () => {
     });
   }, [challenges]);
 
+  const selectChallenge = (id: string) => {
+    setSelection((prev) => (prev?.kind === 'challenge' && prev.id === id ? null : { kind: 'challenge', id }));
+  };
+
+  const selectSuggest = (cohortId: FeedCohortId) => {
+    setSelection((prev) =>
+      prev?.kind === 'suggest' && prev.cohortId === cohortId ? null : { kind: 'suggest', cohortId }
+    );
+  };
+
   return (
     <div className="space-y-6">
-      {/* Secondary tabs */}
-      <div
-        className="flex flex-wrap gap-2"
-        role="tablist"
-        aria-label="Challenge status"
-      >
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Challenge status">
         {STATUS_TABS.map((t) => {
           const selected = statusTab === t.id;
           return (
@@ -119,66 +165,95 @@ export const ChallengesView: React.FC = () => {
         })}
       </div>
 
-      {/* Challenge cards — cohorts that have a challenge in this status */}
       <div className="space-y-4" role="tabpanel" aria-labelledby={`challenge-status-${statusTab}`}>
-        {filtered.length === 0 &&
-        !(statusTab === 'upcoming' && cohortIdsWithoutUpcomingChallenge.length > 0) ? (
+        {!hasAnyStrip ? (
           <p className="cds-body-secondary text-[var(--cds-color-grey-600)]">No challenges in this category.</p>
         ) : (
-          filtered.map((c) => (
-            <ChallengeCard
-              key={c.id}
-              challenge={c}
-              optedIn={c.optedIn}
-              onToggleOptIn={() => toggleOptedIn(c.id)}
-              highFiveByMemberId={highFiveByMemberId}
-              onHighFive={c.lifecycle === 'completed' ? onHighFive : undefined}
-              onOpenShareout={
-                c.lifecycle === 'completed' && c.outcome?.won ? () => setShareoutId(c.id) : undefined
-              }
-            />
-          ))
+          <>
+            <div
+              className="flex flex-row items-stretch gap-3 overflow-x-auto pl-[5px] pb-2 pt-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+              aria-label="Challenges and suggestions"
+            >
+              {filtered.map((c) => (
+                <ChallengeCard
+                  key={c.id}
+                  challenge={c}
+                  isSelected={selection?.kind === 'challenge' && selection.id === c.id}
+                  onSelect={() => selectChallenge(c.id)}
+                />
+              ))}
+              {statusTab === 'upcoming' &&
+                cohortIdsWithoutUpcomingChallenge.map((cohortId) => (
+                  <SuggestChallengeStripCard
+                    key={`suggest-${cohortId}`}
+                    cohortId={cohortId}
+                    isSelected={selection?.kind === 'suggest' && selection.cohortId === cohortId}
+                    onSelect={() => selectSuggest(cohortId)}
+                  />
+                ))}
+            </div>
+
+            {selection?.kind === 'challenge' && challengeForDetail && (
+              <ChallengeFullDetail
+                challenge={challengeForDetail}
+                optedIn={challengeForDetail.optedIn}
+                onToggleOptIn={() => toggleOptedIn(challengeForDetail.id)}
+                highFiveByMemberId={highFiveByMemberId}
+                onHighFive={challengeForDetail.lifecycle === 'completed' ? onHighFive : undefined}
+                onOpenShareout={
+                  challengeForDetail.lifecycle === 'completed' && challengeForDetail.outcome?.won
+                    ? () => setShareoutId(challengeForDetail.id)
+                    : undefined
+                }
+              />
+            )}
+
+            {selection?.kind === 'suggest' && (
+              <div className="overflow-hidden rounded-2xl border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-[var(--cds-elevation-level1)]">
+                {(() => {
+                  const meta = FEED_COHORT_META[selection.cohortId];
+                  return (
+                    <>
+                      <div className="border-b border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] px-4 py-4 sm:px-5">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[var(--cds-color-blue-25)] px-2.5 py-0.5 cds-body-secondary text-[var(--cds-color-grey-975)]">
+                            {meta.pillLabel}
+                          </span>
+                        </div>
+                        <h2 className="cds-subtitle-md text-[var(--cds-color-grey-975)]">No upcoming challenge yet</h2>
+                        <p className="mt-1 cds-body-tertiary text-[var(--cds-color-grey-600)]">
+                          {meta.label} · {meta.memberCount.toLocaleString()} members
+                        </p>
+                      </div>
+                      <div className="space-y-4 p-4 sm:p-5">
+                        <p className="cds-body-secondary text-[var(--cds-color-grey-700)]">
+                          There isn&apos;t an upcoming group challenge for this cohort yet. Suggest one so learners can opt
+                          in when it starts.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => suggestChallengeForCohort(meta.label)}
+                          className="w-full rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-4 py-3 cds-action-secondary text-[var(--cds-color-white)] hover:bg-[var(--cds-color-blue-800)] sm:w-auto"
+                        >
+                          Suggest a challenge
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {!selection && (
+              <div className="rounded-2xl border border-dashed border-[var(--cds-color-grey-200)] bg-[var(--cds-color-grey-25)] px-6 py-10 text-center">
+                <p className="cds-body-secondary text-[var(--cds-color-grey-600)]">
+                  Select a challenge above to read details here.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
-
-      {/* Upcoming: suggest a challenge for joined cohorts that have nothing scheduled */}
-      {statusTab === 'upcoming' &&
-        cohortIdsWithoutUpcomingChallenge.map((cohortId: FeedCohortId) => {
-          const meta = FEED_COHORT_META[cohortId];
-          return (
-            <div
-              key={cohortId}
-              className="pointer-events-none rounded-[var(--cds-border-radius-200)] border border-dashed border-[var(--cds-color-grey-200)] bg-transparent p-4 sm:p-5"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-[var(--cds-color-blue-25)] px-2.5 py-0.5 cds-body-secondary text-[var(--cds-color-grey-975)]">
-                      {meta.pillLabel}
-                    </span>
-                  </div>
-                  <h3 className="cds-subtitle-md text-[var(--cds-color-grey-975)]">No upcoming challenge</h3>
-                  <p className="mt-1 cds-body-tertiary text-[var(--cds-color-grey-600)]">
-                    {meta.label} · {meta.memberCount.toLocaleString()} members
-                  </p>
-                  <p className="mt-3 cds-body-secondary text-[var(--cds-color-grey-700)]">
-                    There isn&apos;t an upcoming group challenge for this cohort yet. Suggest one so learners can opt in
-                    when it starts.
-                  </p>
-                </div>
-                <div className="pointer-events-auto flex shrink-0 flex-col gap-2 sm:items-end">
-                  <button
-                    type="button"
-                    onClick={() => suggestChallengeForCohort(meta.label)}
-                    className="cds-action-secondary rounded-[var(--cds-border-radius-100)] px-4 py-2 text-[var(--cds-color-blue-700)] hover:bg-[var(--cds-color-blue-25)]"
-                  >
-                    Suggest a challenge
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
 
       <ChallengeShareoutModal
         isOpen={shareoutId != null && shareoutChallenge != null}

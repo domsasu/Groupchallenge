@@ -51,8 +51,10 @@ const App: React.FC = () => {
   // Track active lesson by ID - Start at first lesson for Today's Goal design
   const [activeLessonId, setActiveLessonId] = useState<string>("m1-l1");
   
-  // View State - Default to 'home' for logged in homepage
-  const [currentView, setCurrentView] = useState<View>('home');
+  // View State - Default to 'home' for logged in homepage (Community when Figma html-to-design capture is active)
+  const [currentView, setCurrentView] = useState<View>(() =>
+    typeof window !== 'undefined' && window.location.hash.includes('figmacapture') ? 'feed' : 'home'
+  );
   
   // Assessment results - tracks sub-skill scores from the assessment
   // These values match what's shown in AssessmentResult: 10/10 correct for first skill, 

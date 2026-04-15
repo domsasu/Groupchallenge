@@ -264,27 +264,33 @@ export function MiniLeaderboardRow({
   peer,
   isUser,
   isMedal,
+  compact,
 }: {
   peer: LeaderboardPeer;
   isUser: boolean;
   isMedal: boolean;
+  /** Tighter row for condensed layouts (e.g. Home). Parent panel should use `p-3` when compact. */
+  compact?: boolean;
 }) {
+  const pad = compact ? '-mx-3 px-3' : '-mx-5 px-5';
   return (
     <div
-      className={`flex h-[38px] min-h-[38px] items-center gap-1.5 ${
-        isUser ? 'rounded-none bg-[#FFF4E8] -mx-5 px-5' : ''
-      }`}
+      className={`flex items-center gap-1.5 ${
+        compact ? 'h-8 min-h-8' : 'h-[38px] min-h-[38px]'
+      } ${isUser ? `rounded-none bg-[#FFF4E8] ${pad}` : ''}`}
     >
-      <span className="w-7 shrink-0 text-left">
+      <span className={`${compact ? 'w-6' : 'w-7'} shrink-0 text-left`}>
         {isMedal ? (
           <img
             src={HONOR_MEDAL_SRC[peer.rank as 1 | 2 | 3]}
             alt=""
-            className="h-6 w-6 inline-block"
+            className={`${compact ? 'h-4 w-4' : 'h-6 w-6'} inline-block`}
             aria-hidden
           />
         ) : (
-          <span className={`tabular-nums text-left ${isUser ? 'cds-action-secondary text-[var(--cds-color-grey-975)]' : 'cds-body-secondary text-[var(--cds-color-grey-600)]'}`}>
+          <span
+            className={`tabular-nums text-left text-xs ${isUser ? 'cds-action-secondary text-[var(--cds-color-grey-975)]' : 'cds-body-secondary text-[var(--cds-color-grey-600)]'}`}
+          >
             {peer.rank}
           </span>
         )}
@@ -293,12 +299,16 @@ export function MiniLeaderboardRow({
         letter={peer.letter}
         seed={peer.name}
         isLive={isUser || !!peer.isLive}
-        size="leaderboard"
+        size={compact ? 'compact' : 'leaderboard'}
       />
-      <span className={`min-w-0 flex-1 truncate ${isUser ? 'cds-action-secondary text-[var(--cds-color-grey-975)]' : 'cds-body-secondary text-[var(--cds-color-grey-975)]'}`}>
+      <span
+        className={`min-w-0 flex-1 truncate ${compact ? 'text-xs' : ''} ${isUser ? 'cds-action-secondary text-[var(--cds-color-grey-975)]' : 'cds-body-secondary text-[var(--cds-color-grey-975)]'}`}
+      >
         {peer.name}
       </span>
-      <span className={`shrink-0 tabular-nums ${isUser ? 'cds-action-secondary text-[var(--cds-color-grey-975)]' : 'cds-body-secondary text-[var(--cds-color-grey-600)]'}`}>
+      <span
+        className={`shrink-0 tabular-nums ${compact ? 'text-xs' : ''} ${isUser ? 'cds-action-secondary text-[var(--cds-color-grey-975)]' : 'cds-body-secondary text-[var(--cds-color-grey-600)]'}`}
+      >
         {peer.hours}
       </span>
     </div>
