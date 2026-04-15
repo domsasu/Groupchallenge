@@ -243,12 +243,12 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                   <p className="text-xl font-bold leading-tight tracking-tight text-[var(--cds-color-grey-975)] sm:text-2xl">
                     Challenge winners!
                   </p>
-                  <p className="mt-1 text-xl font-bold leading-tight tracking-tight text-[var(--cds-color-grey-975)] sm:text-2xl">
+                  <p className="mt-2 text-sm font-medium leading-snug text-[var(--cds-color-grey-600)] sm:text-base">
                     Great job {learnerGroupSquad.label}!
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <div className="rounded-[var(--cds-border-radius-100)] border border-emerald-200/90 bg-[var(--cds-color-white)]/90 px-3 py-2.5 shadow-sm">
+                  <div className="w-fit max-w-full self-start rounded-[var(--cds-border-radius-100)] border border-emerald-200/90 bg-[#F0F9F4] px-3 py-2.5 shadow-sm">
                     <p className="cds-subtitle-sm text-[var(--cds-color-grey-975)]">Recognition</p>
                     <p className="mt-1 cds-body-secondary text-[var(--cds-color-grey-975)]">
                       {recognitionIsYou ? (
