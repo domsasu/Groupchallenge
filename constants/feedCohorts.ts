@@ -8,7 +8,7 @@ import {
 export type FeedCohortId =
   | 'enrolled'
   | 'ai'
-  | 'careerswitchers'
+  | 'workingparents'
   | 'design'
   | 'healthcare'
   | 'engineering'
@@ -30,13 +30,13 @@ export interface FeedCohortMeta {
 }
 
 export const FEED_COHORT_META: Record<FeedCohortId, FeedCohortMeta> = {
-  careerswitchers: {
-    id: 'careerswitchers',
-    label: 'Career switchers',
-    pillLabel: '#careerswitchers',
+  workingparents: {
+    id: 'workingparents',
+    label: 'Working parents',
+    pillLabel: '#workingparents',
     memberCount: 634,
     shortDescription:
-      'Peers building skills for a new role. Share progress and learn from others making a career change.',
+      'Parents fitting coursework around nap time, daycare, and school pickups—small daily blocks add up.',
     joinedByDefault: true,
     activityPill: 'New activity',
   },
@@ -224,9 +224,9 @@ export interface FeedPlaceholderItem {
 }
 
 const cohortFeedCopy: Record<FeedCohortId, { theme: string; courseHint: string }> = {
-  careerswitchers: {
-    theme: 'Career switching',
-    courseHint: 'Google Data Analytics Professional Certificate',
+  workingparents: {
+    theme: 'Parent learners',
+    courseHint: 'Flexible certificate courses you can pace in short sessions',
   },
   enrolled: {
     theme: 'General learning',
@@ -526,7 +526,7 @@ function itemFromTemplate(
 
 /** Per-cohort media order so each cohort feels like a distinct feed (same six templates, different rhythm). */
 const FEED_MEDIA_ORDER_BY_COHORT: Record<FeedCohortId, FeedMediaTemplateKey[]> = {
-  careerswitchers: ['a1', 'v1', 'p1', 'a2', 'v2', 'p2'],
+  workingparents: ['a1', 'v1', 'p1', 'a2', 'v2', 'p2'],
   enrolled: ['a1', 'v2', 'p1', 'p2', 'v1', 'a2'],
   ai: ['v1', 'p2', 'a1', 'v2', 'p1', 'a2'],
   design: ['a2', 'p1', 'v1', 'a1', 'p2', 'v2'],

@@ -181,14 +181,15 @@ function LearningPlanCalendar() {
 /*  Cohort Selection                                                  */
 /* ------------------------------------------------------------------ */
 
-export type CohortId = 'enrolled' | 'ai' | 'careerswitchers';
+export type CohortId = 'enrolled' | 'ai' | 'workingparents';
 
 export const COHORTS: { id: CohortId; label: string; members: number; summary: string }[] = [
   {
-    id: 'careerswitchers',
-    label: '#careerswitchers',
+    id: 'workingparents',
+    label: '#workingparents',
     members: 634,
-    summary: 'Peers building skills for a new role. Share progress and learn from others making a career change.',
+    summary:
+      'Parents fitting coursework around nap time, daycare, and school pickups—small daily blocks add up.',
   },
   {
     id: 'enrolled',
@@ -239,7 +240,7 @@ export const COHORT_LEADERBOARD: Record<CohortId, { top3: LeaderboardPeer[]; aro
     ],
     userRank: 6,
   },
-  careerswitchers: {
+  workingparents: {
     top3: [
       { rank: 1, letter: 'M', name: 'Maya Chen', hours: '15h', isLive: true },
       { rank: 2, letter: 'R', name: 'Ravi Patel', hours: '14.5h' },
@@ -590,7 +591,7 @@ export const MyLearning: React.FC<MyLearningProps> = ({
   courseData,
 }) => {
   const [activeTab, setActiveTab] = useState<TabId>('in-progress');
-  const [selectedCohort, setSelectedCohort] = useState<CohortId>('careerswitchers');
+  const [selectedCohort, setSelectedCohort] = useState<CohortId>('workingparents');
 
   return (
     <div className="flex flex-col flex-1 overflow-y-auto max-w-[1440px] mx-auto bg-[var(--cds-color-white)] custom-scrollbar">

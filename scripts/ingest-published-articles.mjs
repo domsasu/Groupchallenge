@@ -15,7 +15,7 @@ const outPath = path.join(root, 'constants/publishedArticles.generated.ts');
 const COHORT_IDS = [
   'enrolled',
   'ai',
-  'careerswitchers',
+  'workingparents',
   'design',
   'healthcare',
   'engineering',
@@ -64,7 +64,7 @@ function cohortsForRow(r) {
   const set = new Set();
 
   if (epic.includes('switching careers') || (cat.includes('career') && persona.includes('switcher'))) {
-    set.add('careerswitchers');
+    set.add('workingparents');
   }
 
   if (
@@ -252,7 +252,7 @@ export interface PublishedArticleRecord {
 export type PublishedArticleCohortId =
   | 'enrolled'
   | 'ai'
-  | 'careerswitchers'
+  | 'workingparents'
   | 'design'
   | 'healthcare'
   | 'engineering'

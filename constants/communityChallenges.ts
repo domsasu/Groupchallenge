@@ -2,7 +2,7 @@ import { JOINED_FEED_COHORT_IDS, type FeedCohortId } from './feedCohorts';
 
 /**
  * Mock challenges use only cohorts the learner has joined — same set/order as
- * `JOINED_FEED_COHORT_IDS` in feedCohorts (Career switchers, Coursera community, AI & data).
+ * `JOINED_FEED_COHORT_IDS` in feedCohorts (Working parents, Coursera community, AI & data).
  */
 
 export type ChallengeLifecycle = 'active' | 'upcoming' | 'completed';
@@ -67,44 +67,56 @@ export interface CommunityChallenge {
   visualTier: ChallengeVisualTier;
   /** Progress toward current challenge goal, 0–1 (drives progress bar on strip card). */
   cardProgress: number;
+  /**
+   * Optional per-group progress toward the final goal (0–1), keyed by 1-based group number.
+   * Used in challenge detail hover tooltips; if omitted, a tier-based estimate is shown.
+   */
+  groupProgressTowardGoal?: Record<number, number>;
 }
 
 export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
   {
-    id: 'ch-active-career-20',
-    name: '20 Lessons Habit Challenge',
-    cohortId: 'careerswitchers',
+    id: 'ch-active-workingparents-nap-module',
+    name: 'Nap time, grind time',
+    cohortId: 'workingparents',
     lifecycle: 'active',
     groupIndex: 3,
     groupCount: 5,
     groupPlace: 2,
     approxGroupSize: 127,
     whyJoin:
-      'Structured short bursts build a daily learning habit so career-switch milestones feel achievable instead of overwhelming.',
+      'Working parents stack course modules when kids sleep, at daycare, or away—about 30–60 minutes a day adds up as your group pushes toward 100 modules together.',
     milestones: [
-      { id: 'm1', label: 'Silver', target: '5 lessons' },
-      { id: 'm2', label: 'Gold', target: '12 lessons' },
-      { id: 'm3', label: 'Platinum', target: '18 lessons' },
-      { id: 'm4', label: 'Diamond', target: '25 lessons' },
+      { id: 'm1', label: 'Silver', target: '25 modules' },
+      { id: 'm2', label: 'Gold', target: '50 modules' },
+      { id: 'm3', label: 'Platinum', target: '75 modules' },
+      { id: 'm4', label: 'Diamond', target: '100 modules' },
     ],
     steps: [
-      'Complete at least one lesson on 12 of the next 14 days.',
-      'Use the same 25-minute focus window each day where possible.',
-      'Check in with your sub-group thread once per week.',
+      'Carve focused time during naps or after bedtime—protect those windows on your calendar.',
+      'Use daycare, school, or when a partner has the kids to knock out a module or two.',
+      'Aim for 30–60 minutes most days; short sessions still move the needle toward 100 modules.',
     ],
-    startsAt: '2026-04-01',
-    endsAt: '2026-04-30',
-    daysLeft: 16,
+    startsAt: '2026-04-15',
+    endsAt: '2026-04-22',
+    daysLeft: 7,
     optedIn: true,
     currentTierIndex: 1,
     groupsAtMilestoneTier: [
-      [1, 4],
       [2],
-      [3],
-      [5],
+      [1, 3],
+      [4, 5],
+      [],
     ],
     visualTier: 'gold',
-    cardProgress: 0.55,
+    cardProgress: 0.45,
+    groupProgressTowardGoal: {
+      1: 0.72,
+      2: 0.28,
+      3: 0.45,
+      4: 0.68,
+      5: 0.32,
+    },
   },
   {
     id: 'ch-upcoming-enrolled-streak',
@@ -139,8 +151,8 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     cardProgress: 0,
   },
   {
-    id: 'ch-upcoming-ai-hours',
-    name: 'AI Foundations: 30 Study Hours',
+    id: 'ch-upcoming-ai-gab-lab-500',
+    name: 'Prompt runners unite!',
     cohortId: 'ai',
     lifecycle: 'upcoming',
     groupIndex: 1,
@@ -148,17 +160,17 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     groupPlace: 1,
     approxGroupSize: 211,
     whyJoin:
-      'Batching hours toward a single skill area reduces context switching and mirrors how pros deepen ML literacy.',
+      'Your cohort is chasing 500 hours of real back-and-forth with the AI coach—talking things through beats passive watching, and every threaded chat nudges the group meter.',
     milestones: [
-      { id: 'm1', label: 'Silver', target: '10 hrs' },
-      { id: 'm2', label: 'Gold', target: '20 hrs' },
-      { id: 'm3', label: 'Platinum', target: '25 hrs' },
-      { id: 'm4', label: 'Diamond', target: '30 hrs' },
+      { id: 'm1', label: 'Silver', target: '125 hrs' },
+      { id: 'm2', label: 'Gold', target: '250 hrs' },
+      { id: 'm3', label: 'Platinum', target: '375 hrs' },
+      { id: 'm4', label: 'Diamond', target: '500 hrs' },
     ],
     steps: [
-      'Dedicate three 3-hour blocks per week on your calendar.',
-      'Alternate video and practice items to reinforce concepts.',
-      'Post your weekly focus topic in the cohort channel.',
+      'Spend time in conversational coach threads—follow-ups, clarifications, and “what if” tangents count; one-shot prompts don’t.',
+      'Carve a few standing slots per week for voice or text dialogue so the habit sticks.',
+      'Drop your funniest or most surprisingly useful coach exchange in the cohort channel to keep the gab going.',
     ],
     startsAt: '2026-04-18',
     endsAt: '2026-05-18',
@@ -268,10 +280,141 @@ export function formatGroupPlaceLine(
   return `Group ${c.groupIndex} is in ${ordinalPlace(c.groupPlace)} place out of ${c.groupCount}`;
 }
 
+export function formatYouAreInGroupLine(
+  c: Pick<CommunityChallenge, 'groupIndex' | 'groupCount'>
+): string {
+  return `You are in group ${c.groupIndex} out of ${c.groupCount}`;
+}
+
 export function formatGroupsAtMilestoneLine(groupNumbers: number[]): string {
   if (groupNumbers.length === 0) return 'No groups at this tier yet.';
   const sorted = [...groupNumbers].sort((a, b) => a - b);
   return sorted.length === 1 ? `Group ${sorted[0]}` : `Groups ${sorted.join(', ')}`;
+}
+
+/**
+ * "Progress to goal" quantity when the final milestone has a numeric target (e.g. "25 lessons", "30 hrs").
+ * Uses `cardProgress` × final cap. Returns null if targets are not parseable (fallback to % in UI).
+ */
+export function formatProgressGoalQuantityLine(challenge: CommunityChallenge): string | null {
+  const milestones = challenge.milestones;
+  if (milestones.length === 0) return null;
+  const lastTarget = milestones[milestones.length - 1]?.target;
+  if (!lastTarget) return null;
+  const numbers = lastTarget.match(/\d+(?:\.\d+)?/g);
+  if (!numbers?.length) return null;
+  const total = parseFloat(numbers[numbers.length - 1]);
+  if (!Number.isFinite(total) || total <= 0) return null;
+  const p = Math.min(1, Math.max(0, challenge.cardProgress));
+  const completed = Math.round(p * total);
+  const t = lastTarget.toLowerCase();
+  if (/%/.test(t)) {
+    return `${completed} / ${total}%`;
+  }
+  if (/\bhrs?\b|hours?/.test(t)) {
+    return `${completed} / ${total} hrs`;
+  }
+  if (/\bdays?\b/.test(t)) {
+    return `${completed} / ${total} days`;
+  }
+  if (/\bmodules?\b/.test(t)) {
+    return `${completed} / ${total} modules`;
+  }
+  if (/\blessons?\b/.test(t)) {
+    return `${completed} / ${total} lessons`;
+  }
+  return `${completed} / ${total}`;
+}
+
+/** Same as formatProgressGoalQuantityLine but with an explicit progress fraction (e.g. another group’s pace). */
+export function formatProgressGoalQuantityLineForFraction(
+  challenge: CommunityChallenge,
+  progress01: number
+): string | null {
+  return formatProgressGoalQuantityLine({ ...challenge, cardProgress: progress01 });
+}
+
+/** Total goal units from the last milestone target (matches `formatProgressGoalQuantityLine`). */
+export function parseChallengeGoalTotalUnits(challenge: CommunityChallenge): number | null {
+  const milestones = challenge.milestones;
+  if (milestones.length === 0) return null;
+  const lastTarget = milestones[milestones.length - 1]?.target;
+  if (!lastTarget) return null;
+  const numbers = lastTarget.match(/\d+(?:\.\d+)?/g);
+  if (!numbers?.length) return null;
+  const total = parseFloat(numbers[numbers.length - 1]);
+  return Number.isFinite(total) && total > 0 ? total : null;
+}
+
+/** Ordered numeric caps from each milestone target (e.g. 25 / 50 / 75 / 100 modules). */
+export function parseMilestoneNumericCaps(challenge: CommunityChallenge): number[] {
+  const out: number[] = [];
+  for (const m of challenge.milestones) {
+    if (!m.target) return [];
+    const numbers = m.target.match(/\d+(?:\.\d+)?/g);
+    if (!numbers?.length) return [];
+    const v = parseFloat(numbers[numbers.length - 1]);
+    if (!Number.isFinite(v)) return [];
+    out.push(v);
+  }
+  return out;
+}
+
+/**
+ * Which milestone column (0-based) a completed quantity belongs in: [0, cap[0]), [cap[0], cap[1]), …
+ * Example: caps [25,50,75,100] → 32 completed → index 1 (Gold).
+ */
+export function tierColumnIndexForCompletedUnits(completed: number, caps: number[]): number {
+  if (caps.length === 0) return 0;
+  const c = Math.max(0, completed);
+  for (let i = 0; i < caps.length; i++) {
+    if (c < caps[i]) return i;
+  }
+  return caps.length - 1;
+}
+
+/**
+ * Places each group under the milestone column that matches its progress vs caps.
+ * Falls back to `groupsAtMilestoneTier` when per-group progress or caps can’t be derived.
+ */
+export function resolveGroupsAtTierColumns(challenge: CommunityChallenge): number[][] | undefined {
+  const staticLayout = challenge.groupsAtMilestoneTier;
+  if (!staticLayout) return undefined;
+  const map = challenge.groupProgressTowardGoal;
+  const total = parseChallengeGoalTotalUnits(challenge);
+  const caps = parseMilestoneNumericCaps(challenge);
+  if (
+    !map ||
+    total == null ||
+    caps.length === 0 ||
+    caps.length !== challenge.milestones.length
+  ) {
+    return staticLayout;
+  }
+  const n = challenge.groupCount;
+  const buckets: number[][] = Array.from({ length: caps.length }, () => []);
+  for (let g = 1; g <= n; g++) {
+    const p = map[g];
+    if (p == null) return staticLayout;
+    const completed = Math.round(Math.min(1, Math.max(0, p)) * total);
+    const col = tierColumnIndexForCompletedUnits(completed, caps);
+    buckets[col].push(g);
+  }
+  for (const row of buckets) row.sort((a, b) => a - b);
+  return buckets;
+}
+
+/** Resolves 0–1 progress for a group: uses mock map when present, else tier-column estimate. */
+export function getGroupProgressTowardGoal(
+  challenge: CommunityChallenge,
+  groupNumber: number,
+  tierColumnIndex: number
+): number {
+  const explicit = challenge.groupProgressTowardGoal?.[groupNumber];
+  if (explicit != null) return Math.min(1, Math.max(0, explicit));
+  const n = challenge.milestones.length;
+  if (n <= 0) return 0;
+  return Math.min(1, (tierColumnIndex + 1) / n);
 }
 
 export function challengesForLifecycle(
@@ -289,6 +432,33 @@ export function sortChallengesByJoinedCohortOrder(challenges: CommunityChallenge
   };
   return [...challenges].sort((a, b) => {
     const d = rank(a.cohortId) - rank(b.cohortId);
+    if (d !== 0) return d;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+/**
+ * Community → Challenges strip order. Upcoming tab puts **AI & data** first, then working parents,
+ * then Coursera community (so e.g. AI cohort challenge appears before the 14-day streak). Other tabs use join order.
+ */
+const UPCOMING_STRIP_COHORT_PRIORITY: FeedCohortId[] = ['ai', 'workingparents', 'enrolled'];
+
+export function sortChallengesForChallengesView(
+  challenges: CommunityChallenge[],
+  lifecycle: ChallengeLifecycle
+): CommunityChallenge[] {
+  const list = challengesForLifecycle(challenges, lifecycle);
+  if (lifecycle !== 'upcoming') {
+    return sortChallengesByJoinedCohortOrder(list);
+  }
+  const priority = (cohortId: FeedCohortId) => {
+    const i = UPCOMING_STRIP_COHORT_PRIORITY.indexOf(cohortId);
+    if (i !== -1) return i;
+    const j = JOINED_FEED_COHORT_IDS.indexOf(cohortId);
+    return 10 + (j === -1 ? 999 : j);
+  };
+  return [...list].sort((a, b) => {
+    const d = priority(a.cohortId) - priority(b.cohortId);
     if (d !== 0) return d;
     return a.name.localeCompare(b.name);
   });

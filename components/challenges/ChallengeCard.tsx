@@ -82,13 +82,12 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelec
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col justify-start gap-0.5 bg-[var(--cds-color-white)] px-2 pb-2 pt-1.5">
+          <p className="line-clamp-2 text-[13px] font-bold leading-tight text-[var(--cds-color-grey-975)]">{challenge.name}</p>
           {!isUpcoming && (
-            <>
-              <p className="text-[13px] font-bold leading-tight text-[var(--cds-color-grey-975)]">{tierName}</p>
-              <p className="text-[9px] font-bold uppercase tracking-wide text-[var(--cds-color-grey-975)]">Tier</p>
-            </>
+            <p className="text-[10px] font-semibold leading-snug text-[var(--cds-color-grey-600)]">
+              {tierName} tier
+            </p>
           )}
-          <p className="line-clamp-2 text-[10px] font-semibold leading-snug text-[var(--cds-color-grey-975)]">{challenge.name}</p>
           <div className="mt-auto flex flex-col gap-1">
             {isCompleted && challenge.outcome?.won && (
               <span className="inline-flex" aria-label="Won">

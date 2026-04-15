@@ -153,7 +153,7 @@ export interface MiniFeedProps {
 }
 
 export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPlayingChange }) => {
-  const firstCohortId: FeedCohortId = JOINED_FEED_COHORT_IDS[0] ?? 'careerswitchers';
+  const firstCohortId: FeedCohortId = JOINED_FEED_COHORT_IDS[0] ?? 'workingparents';
   const cohortMeta = FEED_COHORT_META[firstCohortId];
   /** Matches FeedPage default pills so preview MOV assets align with Community timeline. */
   const dataScienceLensActive = DEFAULT_FEED_DISCIPLINE_SLUGS.includes(DATA_SCIENCE_DISCIPLINE_SLUG);
@@ -164,7 +164,7 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
 
   /**
    * Video rows only. Lead with the same video sequence as Community for the first joined cohort
-   * (e.g. #careerswitchers) and default discipline pills; then fill from the prior cross-cohort pool.
+   * (e.g. #workingparents) and default discipline pills; then fill from the prior cross-cohort pool.
    */
   const allItems = useMemo(() => {
     const seen = new Set<string>();

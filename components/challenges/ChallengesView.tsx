@@ -3,13 +3,13 @@ import {
   MOCK_COMMUNITY_CHALLENGES,
   challengesForLifecycle,
   sortChallengesByJoinedCohortOrder,
+  sortChallengesForChallengesView,
   type ChallengeLifecycle,
   type CommunityChallenge,
 } from '../../constants/communityChallenges';
 import { FEED_COHORT_META, JOINED_FEED_COHORT_IDS, type FeedCohortId } from '../../constants/feedCohorts';
 import { ChallengeCard } from './ChallengeCard';
 import { ChallengeFullDetail } from './ChallengeFullDetail';
-import { ChallengeShareoutModal } from './ChallengeShareoutModal';
 import { SuggestChallengeStripCard } from './SuggestChallengeStripCard';
 
 const STATUS_TABS: { id: ChallengeLifecycle; label: string }[] = [
@@ -37,7 +37,6 @@ export const ChallengesView: React.FC = () => {
     MOCK_COMMUNITY_CHALLENGES.map((c) => ({ ...c, members: c.members?.map((m) => ({ ...m })) }))
   );
   const [statusTab, setStatusTab] = useState<ChallengeLifecycle>('active');
-  const [shareoutId, setShareoutId] = useState<string | null>(null);
   const [selection, setSelection] = useState<ChallengeSelection>(() => {
     const list = sortChallengesByJoinedCohortOrder(challengesForLifecycle(MOCK_COMMUNITY_CHALLENGES, 'active'));
     return list.length > 0 ? { kind: 'challenge', id: list[0].id } : null;
@@ -48,7 +47,7 @@ export const ChallengesView: React.FC = () => {
 
   /** Auto-select the first strip card when switching tabs so details always show without an extra click. */
   useEffect(() => {
-    const list = sortChallengesByJoinedCohortOrder(challengesForLifecycle(challenges, statusTab));
+    const list = sortChallengesForChallengesView(challenges, statusTab);
     if (list.length > 0) {
       setSelection({ kind: 'challenge', id: list[0].id });
       return;
@@ -68,14 +67,8 @@ export const ChallengesView: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [statusTab]);
 
-  const shareoutChallenge = useMemo(
-    () => (shareoutId ? challenges.find((c) => c.id === shareoutId) ?? null : null),
-    [challenges, shareoutId]
-  );
-
   const filtered = useMemo(
-    () =>
-      sortChallengesByJoinedCohortOrder(challengesForLifecycle(challenges, statusTab)),
+    () => sortChallengesForChallengesView(challenges, statusTab),
     [challenges, statusTab]
   );
 
@@ -101,12 +94,6 @@ export const ChallengesView: React.FC = () => {
       `Challenge proposals for ${cohortLabel} will be reviewed by cohort moderators. This is a preview—no request was sent.`
     );
   }, []);
-
-  const totalHighFivesForShareout = useMemo(() => {
-    const ch = shareoutChallenge;
-    if (!ch?.members) return 0;
-    return ch.members.reduce((sum, m) => sum + (highFiveByMemberId[m.id] ?? m.highFiveCount), 0);
-  }, [shareoutChallenge, highFiveByMemberId]);
 
   const toggleOptedIn = useCallback((id: string) => {
     setChallenges((prev) =>
@@ -201,8 +188,10 @@ export const ChallengesView: React.FC = () => {
                 highFiveByMemberId={highFiveByMemberId}
                 onHighFive={challengeForDetail.lifecycle === 'completed' ? onHighFive : undefined}
                 onOpenShareout={
-                  challengeForDetail.lifecycle === 'completed' && challengeForDetail.outcome?.won
-                    ? () => setShareoutId(challengeForDetail.id)
+                  challengeForDetail.lifecycle === 'completed' && challengeForDetail.outcome
+                    ? () => {
+                        window.alert('Shareout would open here (preview).');
+                      }
                     : undefined
                 }
               />
@@ -254,17 +243,6 @@ export const ChallengesView: React.FC = () => {
           </>
         )}
       </div>
-
-      <ChallengeShareoutModal
-        isOpen={shareoutId != null && shareoutChallenge != null}
-        onClose={() => setShareoutId(null)}
-        challengeName={shareoutChallenge?.name ?? ''}
-        peerCount={shareoutChallenge?.outcome?.shareoutPeerCount ?? 0}
-        totalHighFives={totalHighFivesForShareout}
-        onSharePlaceholder={() => {
-          window.alert('Share sheet would open here (preview).');
-        }}
-      />
     </div>
   );
 };

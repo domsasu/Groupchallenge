@@ -15,7 +15,7 @@ export interface PublishedArticleRecord {
 export type PublishedArticleCohortId =
   | 'enrolled'
   | 'ai'
-  | 'careerswitchers'
+  | 'workingparents'
   | 'design'
   | 'healthcare'
   | 'engineering'
@@ -4033,7 +4033,7 @@ export const PUBLISHED_ARTICLES_BY_COHORT: Record<
       "writer": "Izea"
     }
   ],
-  "careerswitchers": [
+  "workingparents": [
     {
       "title": "What Are Technical Skills?",
       "url": "https://www.coursera.org/articles/what-are-technical-skills",

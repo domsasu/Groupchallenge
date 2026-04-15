@@ -115,7 +115,7 @@ const PEER_BY_RANK_AI: Record<number, PeerRow> = {
   20: { letter: 'P', pseudonym: 'Peter Norvig', hoursLabel: '8.5h' },
 };
 
-/** #careerswitchers cohort — mock leaderboard rows. */
+/** #workingparents cohort — mock leaderboard rows. */
 const PEER_BY_RANK_CAREER: Record<number, PeerRow> = {
   1: { letter: 'M', pseudonym: 'Maya Chen', hoursLabel: '15h', isLive: true },
   2: { letter: 'R', pseudonym: 'Ravi Patel', hoursLabel: '14.5h' },
@@ -139,10 +139,10 @@ const PEER_BY_RANK_CAREER: Record<number, PeerRow> = {
   20: { letter: 'K', pseudonym: 'Kai Berg', hoursLabel: '5.5h' },
 };
 
-type LeaderboardTabId = 'enrolled' | 'ai' | 'careerswitchers';
+type LeaderboardTabId = 'enrolled' | 'ai' | 'workingparents';
 
 const LEADERBOARD_TABS: { id: LeaderboardTabId; label: string }[] = [
-  { id: 'careerswitchers', label: '#careerswitchers' },
+  { id: 'workingparents', label: '#workingparents' },
   { id: 'enrolled', label: '#coursera' },
   { id: 'ai', label: '#AIpowered' },
 ];
@@ -150,21 +150,21 @@ const LEADERBOARD_TABS: { id: LeaderboardTabId; label: string }[] = [
 const PEERS_BY_TAB: Record<LeaderboardTabId, Record<number, PeerRow>> = {
   enrolled: PEER_BY_RANK,
   ai: PEER_BY_RANK_AI,
-  careerswitchers: PEER_BY_RANK_CAREER,
+  workingparents: PEER_BY_RANK_CAREER,
 };
 
 /** Learner rank per cohort tab — varies so “Around you” reflects different standings. */
 const USER_RANK_BY_TAB: Record<LeaderboardTabId, number> = {
   enrolled: 15,
   ai: 6,
-  careerswitchers: 18,
+  workingparents: 18,
 };
 
 /** Priya’s displayed hours at her rank for each cohort (overrides peer row when she’s the learner). */
 const LEARNER_HOURS_BY_TAB: Record<LeaderboardTabId, Record<number, string>> = {
   enrolled: { 15: '9h' },
   ai: { 6: '15h' },
-  careerswitchers: { 18: '6.5h' },
+  workingparents: { 18: '6.5h' },
 };
 
 export type LeaderboardLayoutMode = 'stacked' | 'split';
@@ -556,7 +556,7 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({
   learnerDisplayName = 'Priya',
   onNavigateToMyLearning,
 }) => {
-  const activeTab: LeaderboardTabId = 'careerswitchers';
+  const activeTab: LeaderboardTabId = 'workingparents';
   const peerByRank = PEERS_BY_TAB[activeTab];
   const userRank = USER_RANK_BY_TAB[activeTab];
   const learnerLetter = learnerDisplayName.charAt(0).toUpperCase() || 'P';

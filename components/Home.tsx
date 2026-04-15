@@ -82,8 +82,8 @@ const calculateCareerProgress = (assessmentComplete: boolean, dataAcquisitionPro
 };
 
 type CourseCohort =
-  | { style: 'enrolled'; hashtag: '#AIpowered' | '#Careerswitchers'; count: number }
-  | { style: 'trending'; hashtag: '#AIpowered' | '#Careerswitchers' };
+  | { style: 'enrolled'; hashtag: '#AIpowered' | '#workingparents'; count: number }
+  | { style: 'trending'; hashtag: '#AIpowered' | '#workingparents' };
 
 // Placeholder course card data
 const recommendedCourses: Array<{
@@ -123,7 +123,7 @@ const recommendedCourses: Array<{
     duration: "6-4 months",
     image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=400",
     isTopRecommendation: false,
-    cohort: { style: 'trending', hashtag: '#Careerswitchers' },
+    cohort: { style: 'trending', hashtag: '#workingparents' },
   },
   {
     id: 3,
@@ -136,7 +136,7 @@ const recommendedCourses: Array<{
     duration: "6-6 months",
     image: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&q=80&w=400",
     isTopRecommendation: false,
-    cohort: { style: 'enrolled', hashtag: '#Careerswitchers', count: 8 },
+    cohort: { style: 'enrolled', hashtag: '#workingparents', count: 8 },
   },
   {
     id: 4,
@@ -406,7 +406,7 @@ function HomeActiveChallengePanel({
     onNavigateToFeed?.({ tab: 'challenges', cohortId: cohortKey });
 
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[280px] shrink-0 overflow-hidden rounded-2xl border-2 border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-[var(--cds-elevation-level1)] transition hover:border-[var(--cds-color-blue-700)] hover:shadow-[var(--cds-elevation-level2)] lg:mx-0 lg:max-w-none lg:w-[min(280px,26vw)]">
+    <div className="relative mx-auto h-[280px] w-full max-w-[230px] shrink-0 overflow-hidden rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] transition-shadow hover:shadow-[var(--cds-elevation-level2)] lg:mx-0 lg:h-[280px] lg:max-w-none lg:w-[min(230px,26vw)]">
       {!challenge ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center">
           <p className="cds-body-secondary text-[var(--cds-color-grey-700)]">No scheduled challenge for this cohort.</p>
@@ -540,12 +540,12 @@ function HomeLeaderboard({
 
   return (
     <div className="rounded-[var(--cds-border-radius-200)] bg-[var(--cds-color-white)] p-4 sm:p-5">
-      {/* lg:items-end — challenge tile bottom aligns with leaderboard column bottom; + stays within leaderboard width */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:gap-4">
+      {/* lg:items-end — challenge tile bottom aligns with leaderboard column bottom */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:gap-6">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)]">Leaderboard</h2>
-            <div className="flex min-w-0 flex-wrap gap-2">
+          <div className="flex flex-col gap-3">
+            <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)]">Leaderboard and Challenges</h2>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               {COHORTS.map((cohort) => {
                 const isActive = cohort.id === selectedCohort;
                 return (
@@ -566,21 +566,21 @@ function HomeLeaderboard({
                   </button>
                 );
               })}
+              <button
+                type="button"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--cds-color-grey-600)] transition-colors hover:bg-[var(--cds-color-grey-50)] hover:text-[var(--cds-color-grey-975)]"
+                aria-label="Join a cohort"
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: 20 }}>
+                  add
+                </span>
+              </button>
             </div>
-            <button
-              type="button"
-              className="ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--cds-color-grey-600)] transition-colors hover:bg-[var(--cds-color-grey-50)] hover:text-[var(--cds-color-grey-975)]"
-              aria-label="Join a cohort"
-            >
-              <span className="material-symbols-rounded" style={{ fontSize: 20 }}>
-                add
-              </span>
-            </button>
           </div>
 
           <p className="max-w-3xl cds-body-tertiary text-[var(--cds-color-grey-600)]">
-            Rankings use total learning hours logged in the cohort you have selected, for the current leaderboard period. Top 3 lists
-            the highest-ranked learners; Around you lists peers close to your rank.
+            Rankings use total learning hours logged in the cohort you have selected. Cohort group
+            challenges are previewed in the tile to the right—use the cohort pills above to see other boards and challenges.
           </p>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -632,7 +632,7 @@ export const Home: React.FC<HomeProps> = ({
   const streakHoursCompletedToday = 0;
 
   const [selectedChip, setSelectedChip] = useState('chip1');
-  const [selectedCohort, setSelectedCohort] = useState<CohortId>('careerswitchers');
+  const [selectedCohort, setSelectedCohort] = useState<CohortId>('workingparents');
 
   // Intro video: muted by default, end state for "Continue watching"
   const [introVideoMuted, setIntroVideoMuted] = useState(true);
@@ -1082,14 +1082,6 @@ export const Home: React.FC<HomeProps> = ({
           onNavigateToFeed={onNavigateToFeed}
         />
 
-        {/* Mini feed — below leaderboard; See all opens Community */}
-        {onNavigateToFeed ? (
-          <MiniFeed
-            onOpenFeed={onNavigateToFeed}
-            onMiniFeedClipPlayingChange={setMiniFeedPreviewVideosActive}
-          />
-        ) : null}
-
         {/* Course Recommendations - loads in after top section */}
         <div className="animate-widget-slide-up-content">
           <div className="flex items-center gap-2 mb-4">
@@ -1312,6 +1304,14 @@ export const Home: React.FC<HomeProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Mini feed — bottom of home; See all opens Community */}
+        {onNavigateToFeed ? (
+          <MiniFeed
+            onOpenFeed={onNavigateToFeed}
+            onMiniFeedClipPlayingChange={setMiniFeedPreviewVideosActive}
+          />
+        ) : null}
 
       </div>
     </div>
