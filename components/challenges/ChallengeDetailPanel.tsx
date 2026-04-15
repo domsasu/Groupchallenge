@@ -7,8 +7,6 @@ export interface ChallengeDetailPanelProps {
   challenge: CommunityChallenge;
   optedIn: boolean;
   onToggleOptIn: () => void;
-  highFiveByMemberId?: Record<string, number>;
-  onHighFive?: (memberId: string) => void;
   onOpenShareout?: () => void;
 }
 
@@ -16,8 +14,6 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
   challenge,
   optedIn,
   onToggleOptIn,
-  highFiveByMemberId = {},
-  onHighFive,
   onOpenShareout,
 }) => {
   const isCompleted = challenge.lifecycle === 'completed';
@@ -93,12 +89,8 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
         </div>
       )}
 
-      {isCompleted && challenge.members?.length && onHighFive && (
-        <ChallengeLeaderboardSnippet
-          members={challenge.members}
-          highFiveByMemberId={highFiveByMemberId}
-          onHighFive={onHighFive}
-        />
+      {isCompleted && challenge.members?.length && (
+        <ChallengeLeaderboardSnippet members={challenge.members} />
       )}
 
       {!isCompleted && isUpcoming && (

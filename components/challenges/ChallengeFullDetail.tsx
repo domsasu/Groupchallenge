@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { CommunityChallenge } from '../../constants/communityChallenges';
 import {
   formatChallengeCardHeroLabel,
@@ -7,10 +7,7 @@ import {
   getGroupProgressTowardGoal,
   resolveGroupsAtTierColumns,
 } from '../../constants/communityChallenges';
-import {
-  CHALLENGE_TIER_DISPLAY_NAME,
-  CHALLENGE_TIER_PROGRESS_TONE,
-} from '../../constants/challengeTierVisuals';
+import { CHALLENGE_TIER_PROGRESS_TONE } from '../../constants/challengeTierVisuals';
 import { FEED_COHORT_META } from '../../constants/feedCohorts';
 import { Icons } from '../Icons';
 import { ChallengeDetailPanel } from './ChallengeDetailPanel';
@@ -23,6 +20,124 @@ function resolveTierIndexForCard(challenge: CommunityChallenge): number {
   }
   if (challenge.lifecycle === 'completed') return n - 1;
   return 0;
+}
+
+/** First number in milestone `target` (e.g. "25 modules" → "25"); otherwise 1-based step index. */
+function milestoneQuantityLabel(m: { target?: string }, index: number): string {
+  const match = m.target?.trim().match(/(\d+)/);
+  if (match) return match[1];
+  return String(index + 1);
+}
+
+/** 1-based group index → colored squad name (prototype: five sub-groups). */
+function groupSquadForIndex(g: number): {
+  label: string;
+  muted: string;
+  active: string;
+} {
+  const squads: Record<number, { label: string; muted: string; active: string }> = {
+    1: {
+      label: 'Red Apes',
+      muted: 'border-red-200 bg-red-50 text-red-950',
+      active: 'border-red-500 bg-red-100 text-red-950 shadow-sm ring-2 ring-red-400/40',
+    },
+    2: {
+      label: 'Blue Herons',
+      muted: 'border-sky-200 bg-sky-50 text-sky-950',
+      active: 'border-sky-500 bg-sky-100 text-sky-950 shadow-sm ring-2 ring-sky-400/40',
+    },
+    3: {
+      label: 'Amber Foxes',
+      muted: 'border-amber-200 bg-amber-50 text-amber-950',
+      active: 'border-amber-500 bg-amber-100 text-amber-950 shadow-sm ring-2 ring-amber-400/40',
+    },
+    4: {
+      label: 'Emerald Otters',
+      muted: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+      active: 'border-emerald-500 bg-emerald-100 text-emerald-950 shadow-sm ring-2 ring-emerald-400/40',
+    },
+    5: {
+      label: 'Violet Pandas',
+      muted: 'border-violet-200 bg-violet-50 text-violet-950',
+      active: 'border-violet-500 bg-violet-100 text-violet-950 shadow-sm ring-2 ring-violet-400/40',
+    },
+  };
+  return (
+    squads[g] ?? {
+      label: `Group ${g}`,
+      muted:
+        'border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] text-[var(--cds-color-grey-800)]',
+      active:
+        'border-[var(--cds-color-blue-500)] bg-[var(--cds-color-blue-25)] text-[var(--cds-color-grey-975)] shadow-sm ring-2 ring-[var(--cds-color-blue-400)]/35',
+    }
+  );
+}
+
+function TierSquadStack({
+  challenge,
+  milestoneLabel,
+  milestoneIndex,
+  groupIds,
+}: {
+  challenge: CommunityChallenge;
+  milestoneLabel: string;
+  milestoneIndex: number;
+  groupIds: number[];
+}) {
+  const groups = [...groupIds].sort((a, b) => a - b);
+  return (
+    <div className="mt-0 flex w-full flex-col items-center" aria-label={`Groups at ${milestoneLabel}`}>
+      <div className="h-8 w-px shrink-0 bg-[var(--cds-color-grey-200)]" aria-hidden />
+      <div
+        className="mt-2 flex flex-col items-center gap-1.5"
+        role={groups.length > 0 ? 'list' : undefined}
+      >
+        {groups.length > 0 ? (
+          groups.map((g) => {
+            const isLearnerGroup = g === challenge.groupIndex;
+            const squad = groupSquadForIndex(g);
+            const progress01 = getGroupProgressTowardGoal(challenge, g, milestoneIndex);
+            const progressLine =
+              formatProgressGoalQuantityLineForFraction(challenge, progress01) ??
+              `${Math.round(progress01 * 100)}%`;
+            const tipId = `challenge-${challenge.id}-group-${g}-tier-${milestoneIndex}-progress`;
+            return (
+              <div key={g} role="listitem" className="group relative inline-flex flex-col items-center">
+                <span
+                  tabIndex={0}
+                  aria-describedby={tipId}
+                  title={`${squad.label} · ${progressLine}`}
+                  aria-label={`${squad.label}, progress ${progressLine}`}
+                  className={`inline-flex max-w-[6rem] min-h-[28px] shrink-0 cursor-default items-center justify-center rounded-full border px-2 py-1 text-center text-[9px] font-bold leading-tight outline-none transition-[box-shadow,transform] hover:scale-[1.02] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-700)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--cds-color-grey-25)] ${
+                    isLearnerGroup ? squad.active : squad.muted
+                  }`}
+                >
+                  {squad.label}
+                </span>
+                <div
+                  id={tipId}
+                  role="tooltip"
+                  className="pointer-events-none invisible absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-max max-w-[min(16rem,calc(100vw-2rem))] -translate-x-1/2 rounded-md bg-[var(--cds-color-grey-975)] px-2.5 py-2 text-left opacity-0 shadow-lg transition-opacity duration-150 group-hover:visible group-focus-within:visible group-hover:opacity-100 group-focus-within:opacity-100"
+                >
+                  <span className="block text-[10px] font-semibold text-white">{squad.label}</span>
+                  <span className="mt-0.5 block text-[10px] leading-snug text-white/90">
+                    Progress toward goal: {progressLine}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <span
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--cds-color-grey-200)] text-[10px] text-[var(--cds-color-grey-400)]"
+            aria-label="No group at this tier"
+          >
+            —
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /** Fill % for the connector between milestone segmentIndex and segmentIndex+1 (0-based), from overall card progress. */
@@ -39,8 +154,6 @@ export interface ChallengeFullDetailProps {
   challenge: CommunityChallenge;
   optedIn: boolean;
   onToggleOptIn: () => void;
-  highFiveByMemberId?: Record<string, number>;
-  onHighFive?: (memberId: string) => void;
   onOpenShareout?: () => void;
   /** Shown under “Your contribution” (prototype learner name). */
   learnerDisplayName?: string;
@@ -53,8 +166,6 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
   challenge,
   optedIn,
   onToggleOptIn,
-  highFiveByMemberId,
-  onHighFive,
   onOpenShareout,
   learnerDisplayName = 'Priya',
 }) => {
@@ -68,7 +179,33 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
   const tierGroupsLayout = resolveGroupsAtTierColumns(challenge) ?? challenge.groupsAtMilestoneTier;
   const learnerPoints =
     challenge.members?.find((m) => m.isCurrentUser)?.contribution ?? null;
-  const tierReachedLabel = CHALLENGE_TIER_DISPLAY_NAME[challenge.visualTier];
+  const recognitionIsYou = challenge.members?.some((m) => m.isCurrentUser) ?? false;
+  const learnerGroupSquad = groupSquadForIndex(challenge.groupIndex);
+  const [teamRankingsOpen, setTeamRankingsOpen] = useState(false);
+  const [displayPoints, setDisplayPoints] = useState(0);
+
+  useEffect(() => {
+    setTeamRankingsOpen(false);
+  }, [challenge.id]);
+
+  useEffect(() => {
+    if (!isCompleted || learnerPoints == null) return;
+    setDisplayPoints(0);
+    const duration = 1200;
+    const start = performance.now();
+    let cancelled = false;
+    const step = (now: number) => {
+      if (cancelled) return;
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - (1 - t) ** 3;
+      setDisplayPoints(Math.round(learnerPoints * eased));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    return () => {
+      cancelled = true;
+    };
+  }, [isCompleted, learnerPoints, challenge.id]);
 
   const lifecyclePillClass =
     challenge.lifecycle === 'active'
@@ -104,22 +241,32 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
               <div className="flex min-w-0 flex-col justify-center gap-4 px-4 pt-5 pb-0 sm:px-6 sm:py-6">
                 <div>
                   <p className="text-xl font-bold leading-tight tracking-tight text-[var(--cds-color-grey-975)] sm:text-2xl">
-                    Challenge complete!
+                    Challenge winners!
                   </p>
                   <p className="mt-1 text-xl font-bold leading-tight tracking-tight text-[var(--cds-color-grey-975)] sm:text-2xl">
-                    Great job Group {challenge.groupIndex}!
+                    Great job {learnerGroupSquad.label}!
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
-                    Tier reached{' '}
-                    <span className="font-semibold text-[var(--cds-color-grey-800)]">{tierReachedLabel}</span>
-                  </p>
+                  <div className="rounded-[var(--cds-border-radius-100)] border border-emerald-200/90 bg-[var(--cds-color-white)]/90 px-3 py-2.5 shadow-sm">
+                    <p className="cds-subtitle-sm text-[var(--cds-color-grey-975)]">Recognition</p>
+                    <p className="mt-1 cds-body-secondary text-[var(--cds-color-grey-975)]">
+                      {recognitionIsYou ? (
+                        <>
+                          You received the award for <strong>Longest Streak</strong>.
+                        </>
+                      ) : (
+                        <>
+                          This learner received the award for <strong>Longest Streak</strong>.
+                        </>
+                      )}
+                    </p>
+                  </div>
                   {learnerPoints != null && (
                     <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
                       Points earned{' '}
-                      <span className="font-semibold text-teal-600">
-                        {learnerPoints.toLocaleString()}
+                      <span className="font-semibold tabular-nums text-teal-600" aria-live="polite">
+                        {displayPoints.toLocaleString()}
                       </span>
                     </p>
                   )}
@@ -153,8 +300,10 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
             {meta.pillLabel}
           </span>
           {showGroupPlacement && (
-            <span className="w-fit shrink-0 rounded-full border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-grey-25)] px-2.5 py-0.5 cds-body-secondary text-[var(--cds-color-grey-975)]">
-              Group {challenge.groupIndex}
+            <span
+              className={`w-fit shrink-0 rounded-full border px-2.5 py-0.5 cds-body-secondary ${learnerGroupSquad.muted}`}
+            >
+              {learnerGroupSquad.label}
             </span>
           )}
         </div>
@@ -190,9 +339,6 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                 {challenge.milestones.map((m, i) => {
                   const isHeadStep = i === tierIdx;
                   const upcoming = !isCompleted && i > tierIdx;
-                  const showGroupsByTier = tierGroupsLayout != null;
-                  const raw = tierGroupsLayout?.[i];
-                  const groups = raw != null ? [...raw].sort((a, b) => a - b) : [];
                   const gapCount = Math.max(0, challenge.milestones.length - 1);
                   const segmentFillPct =
                     i > 0 ? connectorSegmentFillPercent(i - 1, gapCount, challenge.cardProgress) : 0;
@@ -200,7 +346,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                     <React.Fragment key={m.id}>
                       {i > 0 && (
                         <div
-                          className="relative z-0 flex h-8 min-w-0 flex-1 items-center"
+                          className="relative z-0 flex h-16 min-w-0 flex-1 items-center"
                           aria-hidden
                         >
                           <div className="absolute left-[-0.75rem] right-[-0.75rem] top-1/2 h-2 -translate-y-1/2 rounded-full bg-[var(--cds-color-grey-200)]">
@@ -217,14 +363,16 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                         className="relative z-[1] flex max-w-[7rem] min-w-0 flex-1 flex-col items-center text-center"
                       >
                         <span
-                          className={`relative z-[2] flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-2 ring-[var(--cds-color-grey-25)] ${
+                          className={`relative z-[2] flex h-16 w-16 shrink-0 items-center justify-center rounded-full ring-4 ring-[var(--cds-color-grey-25)] ${
                             isHeadStep
                               ? 'bg-[#E5C158] text-[var(--cds-color-grey-975)]'
                               : 'bg-[var(--cds-color-grey-200)] text-[var(--cds-color-grey-500)]'
                           }`}
-                          aria-label={m.label}
+                          aria-label={`${m.label}${m.target ? `, ${m.target}` : ''}`}
                         >
-                          <Icons.Trophy className="h-4 w-4 shrink-0" aria-hidden strokeWidth={2.25} />
+                          <span className="text-[20px] font-bold tabular-nums leading-none">
+                            {milestoneQuantityLabel(m, i)}
+                          </span>
                         </span>
                         <span
                           className={`mt-2 line-clamp-2 text-[11px] font-semibold leading-tight ${
@@ -236,74 +384,52 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                         {m.target && (
                           <span className="mt-0.5 line-clamp-2 text-[10px] text-[var(--cds-color-grey-600)]">{m.target}</span>
                         )}
-                        {showGroupsByTier && (
-                          <div
-                            className="mt-3 flex w-full flex-col items-center"
-                            aria-label={`Groups at ${m.label}`}
-                          >
-                            <div
-                              className="h-8 w-px shrink-0 bg-[var(--cds-color-grey-200)]"
-                              aria-hidden
-                            />
-                            <div
-                              className="mt-2 flex flex-col items-center gap-1.5"
-                              role={groups.length > 0 ? 'list' : undefined}
-                            >
-                              {groups.length > 0 ? (
-                                groups.map((g) => {
-                                  const isLearnerGroup = g === challenge.groupIndex;
-                                  const progress01 = getGroupProgressTowardGoal(challenge, g, i);
-                                  const progressLine =
-                                    formatProgressGoalQuantityLineForFraction(challenge, progress01) ??
-                                    `${Math.round(progress01 * 100)}%`;
-                                  const tipId = `challenge-${challenge.id}-group-${g}-progress`;
-                                  return (
-                                    <div
-                                      key={g}
-                                      role="listitem"
-                                      className="group relative inline-flex flex-col items-center"
-                                    >
-                                      <span
-                                        tabIndex={0}
-                                        aria-describedby={tipId}
-                                        title={`Group ${g} · ${progressLine}`}
-                                        className={`flex h-7 w-7 shrink-0 cursor-default items-center justify-center rounded-full border text-[11px] font-bold tabular-nums leading-none outline-none transition-[box-shadow,transform] hover:scale-105 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-700)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--cds-color-grey-25)] ${
-                                          isLearnerGroup
-                                            ? 'border-[var(--cds-color-blue-500)] bg-[var(--cds-color-blue-25)] text-[var(--cds-color-grey-975)]'
-                                            : 'border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] text-[var(--cds-color-grey-800)]'
-                                        }`}
-                                      >
-                                        {g}
-                                      </span>
-                                      <div
-                                        id={tipId}
-                                        role="tooltip"
-                                        className="pointer-events-none invisible absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-max max-w-[min(16rem,calc(100vw-2rem))] -translate-x-1/2 rounded-md bg-[var(--cds-color-grey-975)] px-2.5 py-2 text-left opacity-0 shadow-lg transition-opacity duration-150 group-hover:visible group-focus-within:visible group-hover:opacity-100 group-focus-within:opacity-100"
-                                      >
-                                        <span className="block text-[10px] font-semibold text-white">Group {g}</span>
-                                        <span className="mt-0.5 block text-[10px] leading-snug text-white/90">
-                                          Progress toward goal: {progressLine}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  );
-                                })
-                              ) : (
-                                <span
-                                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--cds-color-grey-200)] text-[10px] text-[var(--cds-color-grey-400)]"
-                                  aria-label="No group at this tier"
-                                >
-                                  —
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </React.Fragment>
                   );
                 })}
               </div>
+              {tierGroupsLayout != null && (
+                <div className="mt-4 border-t border-[var(--cds-color-grey-100)] pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setTeamRankingsOpen((o) => !o)}
+                    aria-expanded={teamRankingsOpen}
+                    className="text-sm font-semibold text-[var(--cds-color-blue-700)] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
+                  >
+                    {teamRankingsOpen ? 'Hide team rankings' : 'See team rankings'}
+                  </button>
+                  {teamRankingsOpen && (
+                    <div
+                      className="mt-3 flex items-start gap-0"
+                      role="list"
+                      aria-label="Team rankings by milestone tier"
+                    >
+                      {challenge.milestones.map((m, i) => {
+                        const groupIds = tierGroupsLayout[i] ?? [];
+                        return (
+                          <React.Fragment key={`rank-row-${m.id}`}>
+                            {i > 0 && (
+                              <div
+                                className="relative z-0 flex h-16 min-w-0 flex-1 items-center"
+                                aria-hidden
+                              />
+                            )}
+                            <div className="relative z-[1] flex max-w-[7rem] min-w-0 flex-1 flex-col items-center text-center">
+                              <TierSquadStack
+                                challenge={challenge}
+                                milestoneLabel={m.label}
+                                milestoneIndex={i}
+                                groupIds={groupIds}
+                              />
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -330,7 +456,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                     </p>
                   </div>
                   <span
-                    className="shrink-0 rounded-full border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--cds-color-grey-600)] sm:text-[11px]"
+                    className="shrink-0 rounded-full border border-[var(--cds-color-purple-200)] bg-[var(--cds-color-purple-25)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--cds-color-purple-800)] sm:text-[11px]"
                     title="Preview: mock leaderboard badge"
                   >
                     Top 5 contributors
@@ -350,8 +476,6 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
           challenge={challenge}
           optedIn={optedIn}
           onToggleOptIn={onToggleOptIn}
-          highFiveByMemberId={highFiveByMemberId}
-          onHighFive={onHighFive}
           onOpenShareout={onOpenShareout}
         />
       </div>

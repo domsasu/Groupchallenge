@@ -23,15 +23,6 @@ type ChallengeSelection =
   | { kind: 'suggest'; cohortId: FeedCohortId }
   | null;
 
-function initHighFiveMap(challenge: CommunityChallenge | undefined): Record<string, number> {
-  const out: Record<string, number> = {};
-  if (!challenge?.members) return out;
-  for (const m of challenge.members) {
-    out[m.id] = m.highFiveCount;
-  }
-  return out;
-}
-
 export const ChallengesView: React.FC = () => {
   const [challenges, setChallenges] = useState<CommunityChallenge[]>(() =>
     MOCK_COMMUNITY_CHALLENGES.map((c) => ({ ...c, members: c.members?.map((m) => ({ ...m })) }))
@@ -41,10 +32,6 @@ export const ChallengesView: React.FC = () => {
     const list = sortChallengesByJoinedCohortOrder(challengesForLifecycle(MOCK_COMMUNITY_CHALLENGES, 'active'));
     return list.length > 0 ? { kind: 'challenge', id: list[0].id } : null;
   });
-  const [highFiveByMemberId, setHighFiveByMemberId] = useState<Record<string, number>>(() =>
-    initHighFiveMap(MOCK_COMMUNITY_CHALLENGES.find((c) => c.lifecycle === 'completed'))
-  );
-
   /** Auto-select the first strip card when switching tabs so details always show without an extra click. */
   useEffect(() => {
     const list = sortChallengesForChallengesView(challenges, statusTab);
@@ -100,21 +87,6 @@ export const ChallengesView: React.FC = () => {
       prev.map((c) => (c.id === id ? { ...c, optedIn: !c.optedIn } : c))
     );
   }, []);
-
-  const onHighFive = useCallback((memberId: string) => {
-    setHighFiveByMemberId((prev) => {
-      let base = 0;
-      for (const c of challenges) {
-        const m = c.members?.find((x) => x.id === memberId);
-        if (m) {
-          base = m.highFiveCount;
-          break;
-        }
-      }
-      const cur = prev[memberId] ?? base;
-      return { ...prev, [memberId]: cur + 1 };
-    });
-  }, [challenges]);
 
   const selectChallenge = (id: string) => {
     setSelection((prev) => (prev?.kind === 'challenge' && prev.id === id ? null : { kind: 'challenge', id }));
@@ -185,8 +157,6 @@ export const ChallengesView: React.FC = () => {
                 challenge={challengeForDetail}
                 optedIn={challengeForDetail.optedIn}
                 onToggleOptIn={() => toggleOptedIn(challengeForDetail.id)}
-                highFiveByMemberId={highFiveByMemberId}
-                onHighFive={challengeForDetail.lifecycle === 'completed' ? onHighFive : undefined}
                 onOpenShareout={
                   challengeForDetail.lifecycle === 'completed' && challengeForDetail.outcome
                     ? () => {
