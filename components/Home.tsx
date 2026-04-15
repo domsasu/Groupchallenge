@@ -23,9 +23,14 @@ import type { FeedCohortId } from '../constants/feedCohorts';
 import { FEED_COHORT_META } from '../constants/feedCohorts';
 import {
   formatChallengeCardHeroLabel,
-  formatGroupPlaceLine,
   MOCK_COMMUNITY_CHALLENGES,
+  type CommunityChallenge,
 } from '../constants/communityChallenges';
+import {
+  CHALLENGE_TIER_ART_SRC,
+  CHALLENGE_TIER_DISPLAY_NAME,
+  CHALLENGE_TIER_PROGRESS_TONE,
+} from '../constants/challengeTierVisuals';
 import type { CommunitySurface } from './FeedPage';
 
 // Assessment sub-skill results type - matches App.tsx
@@ -382,13 +387,6 @@ const collectionCourses = [
   }
 ];
 
-/** Hero tint for home challenge tile — matches community challenge card cohort colors. */
-const HOME_CHALLENGE_HERO: Record<CohortId, string> = {
-  careerswitchers: 'from-slate-950 via-blue-950 to-sky-600',
-  enrolled: 'from-violet-950 via-purple-900 to-fuchsia-600',
-  ai: 'from-zinc-950 via-emerald-950 to-teal-500',
-};
-
 function HomeActiveChallengePanel({
   selectedCohort,
   onNavigateToFeed,
@@ -404,22 +402,11 @@ function HomeActiveChallengePanel({
     return list.find((c) => c.lifecycle === 'active') ?? list.find((c) => c.lifecycle === 'upcoming') ?? null;
   }, [cohortKey]);
 
-  const heroClass = HOME_CHALLENGE_HERO[selectedCohort];
   const openCommunity = () =>
     onNavigateToFeed?.({ tab: 'challenges', cohortId: cohortKey });
 
-  const lifecyclePillClass =
-    challenge && challenge.lifecycle === 'active'
-      ? 'bg-emerald-500/90 text-white'
-      : challenge && challenge.lifecycle === 'upcoming'
-        ? 'bg-amber-500/90 text-white'
-        : 'bg-white/20 text-white backdrop-blur-sm';
-
   return (
-    <div
-      className="relative mx-auto aspect-square w-full max-w-[280px] shrink-0 overflow-hidden rounded-[var(--cds-border-radius-200)] border-2 border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-sm transition-colors hover:border-[var(--cds-color-blue-700)] lg:mx-0 lg:max-w-none lg:w-[min(280px,26vw)]"
-      aria-label="Cohort challenge"
-    >
+    <div className="relative mx-auto aspect-square w-full max-w-[280px] shrink-0 overflow-hidden rounded-2xl border-2 border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-[var(--cds-elevation-level1)] transition hover:border-[var(--cds-color-blue-700)] hover:shadow-[var(--cds-elevation-level2)] lg:mx-0 lg:max-w-none lg:w-[min(280px,26vw)]">
       {!challenge ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center">
           <p className="cds-body-secondary text-[var(--cds-color-grey-700)]">No scheduled challenge for this cohort.</p>
@@ -434,44 +421,110 @@ function HomeActiveChallengePanel({
           )}
         </div>
       ) : (
-        <div className="flex h-full min-h-0 flex-col">
-          <div
-            className={`relative shrink-0 bg-gradient-to-br ${heroClass} px-3 pb-3 pt-3`}
-            style={{ flex: '0 0 38%' }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" aria-hidden />
-            <div className="relative flex h-full flex-col justify-between gap-2">
-              <span
-                className={`line-clamp-2 max-w-[min(100%,11rem)] rounded-md px-1.5 py-0.5 text-[9px] font-semibold leading-tight ${lifecyclePillClass}`}
-              >
-                {formatChallengeCardHeroLabel(challenge)}
-              </span>
-              <p className="line-clamp-2 text-sm font-semibold leading-snug text-white drop-shadow-sm">{challenge.name}</p>
-            </div>
-          </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="rounded-full bg-[var(--cds-color-blue-25)] px-2 py-0.5 text-[11px] font-medium text-[var(--cds-color-grey-975)]">
-                {meta.pillLabel}
-              </span>
-            </div>
-            {challenge.lifecycle !== 'upcoming' && (
-              <p className="text-[11px] leading-snug text-[var(--cds-color-grey-600)]">{formatGroupPlaceLine(challenge)}</p>
-            )}
-            {onNavigateToFeed && (
-              <button
-                type="button"
-                onClick={openCommunity}
-                className="mt-auto w-full rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-grey-975)] px-3 py-2 text-center text-xs font-semibold text-white hover:bg-[var(--cds-color-grey-800)]"
-              >
-                View challenge
-              </button>
-            )}
-          </div>
-        </div>
+        <HomeChallengeCardLikeTile challenge={challenge} metaPillLabel={meta.pillLabel} onOpenCommunity={onNavigateToFeed ? openCommunity : undefined} />
       )}
     </div>
   );
+}
+
+function HomeChallengeCardLikeTile({
+  challenge,
+  metaPillLabel,
+  onOpenCommunity,
+}: {
+  challenge: CommunityChallenge;
+  metaPillLabel: string;
+  onOpenCommunity?: () => void;
+}) {
+  const isCompleted = challenge.lifecycle === 'completed';
+  const isUpcoming = challenge.lifecycle === 'upcoming';
+
+  const lifecyclePillClass =
+    challenge.lifecycle === 'active'
+      ? 'bg-emerald-500/90 text-white'
+      : challenge.lifecycle === 'upcoming'
+        ? 'bg-amber-500/90 text-white'
+        : 'bg-white/20 text-white backdrop-blur-sm';
+
+  const tierSrc = CHALLENGE_TIER_ART_SRC[challenge.visualTier];
+  const tierName = CHALLENGE_TIER_DISPLAY_NAME[challenge.visualTier];
+  const progressTone = CHALLENGE_TIER_PROGRESS_TONE[challenge.visualTier];
+  const progressPct = Math.min(100, Math.max(0, Math.round(challenge.cardProgress * 100)));
+
+  const ariaLabel = isUpcoming
+    ? `${challenge.name}. Open community challenges.`
+    : `${challenge.name}, ${tierName} tier. Open community challenges.`;
+
+  const inner = (
+    <>
+      <div className="flex min-h-0 flex-[1.25] flex-col bg-[#141518]">
+        <div className="relative z-10 flex flex-wrap items-start gap-1 px-3 pt-3">
+          <span
+            className={`line-clamp-2 max-w-[min(100%,12rem)] rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-tight sm:text-[11px] ${lifecyclePillClass}`}
+          >
+            {formatChallengeCardHeroLabel(challenge)}
+          </span>
+        </div>
+        <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-3 py-2">
+          <img
+            src={tierSrc}
+            alt=""
+            className="max-h-[min(62px,15.4vw)] w-full max-w-[min(4.7rem,30%)] object-contain"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        {!isUpcoming && (
+          <div
+            className="relative z-10 mt-auto h-1.5 w-full shrink-0 bg-white/15 sm:h-2"
+            role="progressbar"
+            aria-valuenow={progressPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Progress ${progressPct} percent`}
+          >
+            <div className={`h-full ${progressTone}`} style={{ width: `${progressPct}%` }} />
+          </div>
+        )}
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col justify-start gap-1 bg-[var(--cds-color-white)] px-3 pb-3 pt-2">
+        {!isUpcoming ? (
+          <>
+            <p className="line-clamp-2 text-sm font-bold leading-tight text-[var(--cds-color-grey-975)] sm:text-[15px]">{challenge.name}</p>
+            <p className="text-[11px] font-semibold leading-snug text-[var(--cds-color-grey-600)] sm:text-xs">
+              {tierName} tier
+            </p>
+          </>
+        ) : (
+          <p className="line-clamp-2 text-xs font-semibold leading-snug text-[var(--cds-color-grey-975)] sm:text-[13px]">{challenge.name}</p>
+        )}
+        <div className="mt-auto flex flex-col gap-1.5 pt-1">
+          {isCompleted && challenge.outcome?.won && (
+            <span className="inline-flex" aria-label="Won">
+              <Icons.Trophy className="h-5 w-5 shrink-0 text-amber-600 sm:h-6 sm:w-6" aria-hidden />
+            </span>
+          )}
+          <p className="truncate text-[10px] text-[var(--cds-color-grey-600)] sm:text-[11px]">{metaPillLabel}</p>
+        </div>
+      </div>
+    </>
+  );
+
+  if (onOpenCommunity) {
+    return (
+      <button
+        type="button"
+        onClick={onOpenCommunity}
+        className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[calc(1rem-2px)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
+        aria-label={ariaLabel}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[calc(1rem-2px)]">{inner}</div>;
 }
 
 function HomeLeaderboard({

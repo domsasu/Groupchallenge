@@ -98,9 +98,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
         className={`relative bg-[var(--cds-color-grey-25)] min-h-[min(100%,calc(100vh-5rem))] ${surface.feedBackdropExtraClassName}`}
         data-site-variant={variant}
       >
-        <div className="relative z-10 max-w-[1440px] mx-auto px-4 md:px-6 pb-4 md:pb-5 pt-0">
-          {/* Primary: Feed vs Challenges — underline style (matches My Learning tabs). Top padding lives on the white bar so no grey-25 gap sits above the tabs. */}
-          <div className="sticky top-0 z-10 -mx-4 md:-mx-6 mb-5 border-b border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] px-4 md:px-6 pt-4 md:pt-5">
+        {/* Full-bleed white bar so no grey shows at viewport edges; tab labels align with page column below. */}
+        <div className="sticky top-0 z-50 mb-5 w-full min-w-0 border-b border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] shadow-sm">
+          <div className="mx-auto max-w-[1440px] px-4 pt-4 md:px-6 md:pt-5">
             <div className="flex gap-6" role="tablist" aria-label="Community">
               <button
                 type="button"
@@ -136,9 +136,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
               </button>
             </div>
           </div>
+        </div>
 
+        <div className="relative z-0 mx-auto max-w-[1440px] px-4 pb-4 md:px-6 md:pb-5 pt-0">
           {communitySurface === 'feed' ? (
-            <div id="community-panel-feed" role="tabpanel" aria-labelledby="community-tab-feed">
+            <div id="community-panel-feed" role="tabpanel" aria-labelledby="community-tab-feed" className="relative z-0">
               <div className="mb-5 flex min-w-0 items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <FeedCohortPills
@@ -194,7 +196,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
               </div>
             </div>
           ) : (
-            <div role="tabpanel" aria-labelledby="community-tab-challenges" id="community-panel-challenges">
+            <div role="tabpanel" aria-labelledby="community-tab-challenges" id="community-panel-challenges" className="relative z-0">
               <ChallengesView />
             </div>
           )}

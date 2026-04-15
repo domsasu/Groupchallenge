@@ -5,7 +5,6 @@ import {
   CHALLENGE_TIER_DISPLAY_NAME,
   CHALLENGE_TIER_PROGRESS_TONE,
 } from '../../constants/challengeTierVisuals';
-import type { FeedCohortId } from '../../constants/feedCohorts';
 import { FEED_COHORT_META } from '../../constants/feedCohorts';
 import { Icons } from '../Icons';
 import { ChallengeDetailPanel } from './ChallengeDetailPanel';
@@ -18,18 +17,6 @@ function resolveTierIndexForCard(challenge: CommunityChallenge): number {
   }
   if (challenge.lifecycle === 'completed') return n - 1;
   return 0;
-}
-
-const HERO_GRADIENT: Partial<Record<FeedCohortId, string>> = {
-  careerswitchers: 'from-slate-950 via-blue-950 to-sky-600',
-  enrolled: 'from-violet-950 via-purple-900 to-fuchsia-600',
-  ai: 'from-zinc-950 via-emerald-950 to-teal-500',
-  design: 'from-rose-950 via-orange-900 to-amber-500',
-};
-const HERO_FALLBACK = 'from-slate-800 via-slate-700 to-slate-600';
-
-function heroClass(cohortId: FeedCohortId): string {
-  return HERO_GRADIENT[cohortId] ?? HERO_FALLBACK;
 }
 
 export interface ChallengeFullDetailProps {
@@ -67,8 +54,11 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-[var(--cds-elevation-level1)]">
-      <div className={`relative bg-gradient-to-br ${heroClass(challenge.cohortId)} px-4 pb-4 pt-4`}>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" aria-hidden />
+      <div className="relative bg-[#141518] px-4 pb-4 pt-4">
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-[#141518] via-[#141518]/80 to-transparent"
+          aria-hidden
+        />
         <div className="relative flex flex-col gap-3">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <span
@@ -100,7 +90,21 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
         </div>
         <p className="cds-body-secondary text-[var(--cds-color-grey-700)]">{challenge.whyJoin}</p>
 
-        {challenge.milestones.length > 0 && (
+        {challenge.milestones.length > 0 && isUpcoming && (
+          <div className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] p-4">
+            <p className="cds-body-secondary font-semibold text-[var(--cds-color-grey-975)]">Milestones</p>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-[var(--cds-color-grey-700)]">
+              {challenge.milestones.map((m) => (
+                <li key={m.id} className="cds-body-secondary marker:text-[var(--cds-color-grey-400)]">
+                  <span className="font-medium text-[var(--cds-color-grey-975)]">{m.label}</span>
+                  {m.target ? <span className="text-[var(--cds-color-grey-600)]"> · {m.target}</span> : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {challenge.milestones.length > 0 && !isUpcoming && (
           <div
             aria-label={showGroupPlacement ? 'Challenge progress' : 'Challenge progress (preview)'}
             className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] p-4"

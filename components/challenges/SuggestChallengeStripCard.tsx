@@ -18,24 +18,21 @@ export const SuggestChallengeStripCard: React.FC<SuggestChallengeStripCardProps>
   onSelect,
 }) => {
   const meta = FEED_COHORT_META[cohortId];
+  const headline = `Add a challenge for ${meta.pillLabel}`;
 
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={`flex h-[100px] w-[7.5rem] shrink-0 snap-start flex-col justify-center gap-1 overflow-hidden rounded-xl border-2 border-dashed px-2 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)] ${
+      className={`flex h-[235px] w-[7.5rem] shrink-0 snap-start flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed px-2.5 py-2 text-center transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)] ${
         isSelected
           ? 'border-[var(--cds-color-blue-700)] bg-[var(--cds-color-blue-25)] ring-2 ring-[var(--cds-color-blue-700)]/25'
-          : 'border-[var(--cds-color-grey-200)] bg-transparent hover:border-[var(--cds-color-grey-300)] hover:bg-[var(--cds-color-grey-25)]'
+          : 'border-[var(--cds-color-grey-200)] bg-transparent hover:border-[var(--cds-color-blue-700)] hover:bg-[var(--cds-color-grey-25)]'
       }`}
       aria-pressed={isSelected}
-      aria-label={`Suggest a challenge for ${meta.label}. Show details below.`}
+      aria-label={`${headline}. Show details below.`}
     >
-      <span className="w-fit rounded-full border border-dashed border-[var(--cds-color-blue-300)] bg-[var(--cds-color-white)] px-1.5 py-px text-[8px] font-bold uppercase leading-none text-[var(--cds-color-blue-800)]">
-        Suggest
-      </span>
-      <p className="line-clamp-2 text-[10px] font-semibold leading-tight text-[var(--cds-color-grey-975)]">Add a challenge</p>
-      <p className="truncate text-[9px] leading-tight text-[var(--cds-color-grey-600)]">{meta.pillLabel}</p>
+      <p className="line-clamp-5 w-full text-sm font-semibold leading-snug text-[var(--cds-color-grey-975)]">{headline}</p>
     </button>
   );
 };

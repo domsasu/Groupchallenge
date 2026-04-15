@@ -19,6 +19,7 @@ export interface ChallengeCardProps {
  */
 export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelected, onSelect }) => {
   const isCompleted = challenge.lifecycle === 'completed';
+  const isUpcoming = challenge.lifecycle === 'upcoming';
 
   const lifecyclePillClass =
     challenge.lifecycle === 'active'
@@ -32,6 +33,10 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelec
   const progressTone = CHALLENGE_TIER_PROGRESS_TONE[challenge.visualTier];
   const progressPct = Math.min(100, Math.max(0, Math.round(challenge.cardProgress * 100)));
 
+  const cardAriaLabel = isUpcoming
+    ? `${challenge.name}. Show details below.`
+    : `${challenge.name}, ${tierName} tier. Show details below.`;
+
   return (
     <button
       type="button"
@@ -42,22 +47,16 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelec
           : 'border-[var(--cds-color-grey-200)]'
       }`}
       aria-pressed={isSelected}
-      aria-label={`${challenge.name}, ${tierName} tier. Show details below.`}
+      aria-label={cardAriaLabel}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[calc(1rem-2px)]">
         <div className="relative flex min-h-0 flex-[1.25] flex-col bg-[#141518]">
-          <div className="relative z-10 flex flex-wrap items-start justify-between gap-1 px-2 pt-2">
+          <div className="relative z-10 flex flex-wrap items-start gap-1 px-2 pt-2">
             <span
               className={`line-clamp-2 max-w-[5.25rem] rounded-md px-1.5 py-0.5 text-[9px] font-semibold leading-tight ${lifecyclePillClass}`}
             >
               {formatChallengeCardHeroLabel(challenge)}
             </span>
-            {isCompleted && challenge.outcome?.won && (
-              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-purple-500/90 px-1 py-0.5 text-[8px] font-semibold text-white">
-                <Icons.Trophy className="h-2 w-2" aria-hidden />
-                Won
-              </span>
-            )}
           </div>
           <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-1.5 py-0.5">
             <img
@@ -68,16 +67,36 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelec
               decoding="async"
             />
           </div>
-          <div className="relative z-10 mt-auto h-1 w-full shrink-0 bg-white/15" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100} aria-label={`Progress ${progressPct} percent`}>
-            <div className={`h-full ${progressTone}`} style={{ width: `${progressPct}%` }} />
-          </div>
+          {!isUpcoming && (
+            <div
+              className="relative z-10 mt-auto h-1 w-full shrink-0 bg-white/15"
+              role="progressbar"
+              aria-valuenow={progressPct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Progress ${progressPct} percent`}
+            >
+              <div className={`h-full ${progressTone}`} style={{ width: `${progressPct}%` }} />
+            </div>
+          )}
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col justify-start gap-0.5 bg-[var(--cds-color-white)] px-2 pb-2 pt-1.5">
-          <p className="text-[13px] font-bold leading-tight text-[var(--cds-color-grey-975)]">{tierName}</p>
-          <p className="text-[9px] font-bold uppercase tracking-wide text-[var(--cds-color-grey-975)]">Tier</p>
+          {!isUpcoming && (
+            <>
+              <p className="text-[13px] font-bold leading-tight text-[var(--cds-color-grey-975)]">{tierName}</p>
+              <p className="text-[9px] font-bold uppercase tracking-wide text-[var(--cds-color-grey-975)]">Tier</p>
+            </>
+          )}
           <p className="line-clamp-2 text-[10px] font-semibold leading-snug text-[var(--cds-color-grey-975)]">{challenge.name}</p>
-          <p className="mt-auto truncate text-[9px] text-[var(--cds-color-grey-600)]">{FEED_COHORT_META[challenge.cohortId].pillLabel}</p>
+          <div className="mt-auto flex flex-col gap-1">
+            {isCompleted && challenge.outcome?.won && (
+              <span className="inline-flex" aria-label="Won">
+                <Icons.Trophy className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+              </span>
+            )}
+            <p className="truncate text-[9px] text-[var(--cds-color-grey-600)]">{FEED_COHORT_META[challenge.cohortId].pillLabel}</p>
+          </div>
         </div>
       </div>
     </button>

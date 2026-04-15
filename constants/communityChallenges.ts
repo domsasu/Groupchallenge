@@ -82,9 +82,10 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     whyJoin:
       'Structured short bursts build a daily learning habit so career-switch milestones feel achievable instead of overwhelming.',
     milestones: [
-      { id: 'm1', label: 'Bronze', target: '5 lessons' },
-      { id: 'm2', label: 'Silver', target: '12 lessons' },
-      { id: 'm3', label: 'Gold', target: '20 lessons' },
+      { id: 'm1', label: 'Silver', target: '5 lessons' },
+      { id: 'm2', label: 'Gold', target: '12 lessons' },
+      { id: 'm3', label: 'Platinum', target: '18 lessons' },
+      { id: 'm4', label: 'Diamond', target: '25 lessons' },
     ],
     steps: [
       'Complete at least one lesson on 12 of the next 14 days.',
@@ -98,7 +99,8 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     currentTierIndex: 1,
     groupsAtMilestoneTier: [
       [1, 4],
-      [2, 3],
+      [2],
+      [3],
       [5],
     ],
     visualTier: 'gold',
@@ -148,9 +150,10 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     whyJoin:
       'Batching hours toward a single skill area reduces context switching and mirrors how pros deepen ML literacy.',
     milestones: [
-      { id: 'm1', label: 'Tier 1', target: '10 hrs' },
-      { id: 'm2', label: 'Tier 2', target: '20 hrs' },
-      { id: 'm3', label: 'Tier 3', target: '30 hrs' },
+      { id: 'm1', label: 'Silver', target: '10 hrs' },
+      { id: 'm2', label: 'Gold', target: '20 hrs' },
+      { id: 'm3', label: 'Platinum', target: '25 hrs' },
+      { id: 'm4', label: 'Diamond', target: '30 hrs' },
     ],
     steps: [
       'Dedicate three 3-hour blocks per week on your calendar.',
@@ -162,8 +165,9 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     optedIn: true,
     currentTierIndex: 0,
     groupsAtMilestoneTier: [
-      [2, 3],
       [1],
+      [2],
+      [3],
       [4],
     ],
     visualTier: 'platinum',

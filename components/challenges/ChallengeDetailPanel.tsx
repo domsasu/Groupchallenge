@@ -66,7 +66,7 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
             onClick={onToggleOptIn}
             className={`rounded-[var(--cds-border-radius-100)] px-4 py-2 cds-action-secondary ${
               optedIn
-                ? 'border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] text-[var(--cds-color-grey-975)] hover:bg-[var(--cds-color-grey-25)]'
+                ? 'border-0 bg-transparent text-[var(--cds-color-blue-700)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]'
                 : 'bg-[var(--cds-color-blue-700)] text-[var(--cds-color-white)] hover:bg-[var(--cds-color-blue-800)]'
             }`}
           >
