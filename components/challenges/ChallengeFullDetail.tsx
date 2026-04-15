@@ -99,9 +99,9 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
 
       <div className="space-y-4 p-4 sm:p-5">
         {isCompleted && (
-          <div className="overflow-hidden rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] bg-[#F0F9F4] px-4 py-5 sm:px-6">
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-stretch sm:gap-8">
-              <div className="flex min-w-0 flex-1 flex-col justify-center gap-4">
+          <div className="overflow-hidden rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] bg-[#F0F9F4]">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(180px,360px)] sm:items-stretch sm:gap-8">
+              <div className="flex min-w-0 flex-col justify-center gap-4 px-4 pt-5 pb-0 sm:px-6 sm:py-6">
                 <div>
                   <p className="text-xl font-bold leading-tight tracking-tight text-[var(--cds-color-grey-975)] sm:text-2xl">
                     Challenge complete!
@@ -135,11 +135,11 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                   </button>
                 ) : null}
               </div>
-              <div className="relative mx-auto min-h-[180px] w-full max-w-md shrink-0 overflow-hidden sm:mx-0 sm:min-h-0 sm:max-w-[360px] sm:flex-1 sm:self-stretch">
+              <div className="relative h-full min-h-[180px] w-full overflow-hidden sm:min-h-0">
                 <img
                   src="/challenges/completed-celebration-banner.png"
                   alt=""
-                  className="h-full min-h-[180px] w-full object-cover object-right sm:min-h-full"
+                  className="h-full min-h-[180px] w-full object-cover object-right sm:min-h-0"
                   decoding="async"
                   loading="lazy"
                 />
@@ -312,7 +312,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
           !isUpcoming &&
           !isCompleted &&
           challenge.learnerContributionProgress != null && (
-            <div className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] p-4">
+            <div className="rounded-[var(--cds-border-radius-100)] p-4">
               <h4 className="cds-subtitle-sm text-[var(--cds-color-grey-975)]">Your contribution</h4>
               <p className="mt-1 cds-body-secondary font-semibold text-[var(--cds-color-grey-975)]">
                 {learnerDisplayName}
