@@ -72,6 +72,10 @@ export interface CommunityChallenge {
    * Used in challenge detail hover tooltips; if omitted, a tier-based estimate is shown.
    */
   groupProgressTowardGoal?: Record<number, number>;
+  /**
+   * Learner’s share of progress toward the same goal as the challenge (0–1), for active-detail “Your contribution”.
+   */
+  learnerContributionProgress?: number;
 }
 
 export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
@@ -85,7 +89,7 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     groupPlace: 2,
     approxGroupSize: 127,
     whyJoin:
-      'Working parents stack course modules when kids sleep, at daycare, or away—about 30–60 minutes a day adds up as your group pushes toward 100 modules together.',
+      'Working parents knocking out course modules when kids are asleep, at daycare, or away—about 30–60 minutes a day adds up as your group pushes toward 100 modules together.',
     milestones: [
       { id: 'm1', label: 'Silver', target: '25 modules' },
       { id: 'm2', label: 'Gold', target: '50 modules' },
@@ -117,6 +121,7 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
       4: 0.68,
       5: 0.32,
     },
+    learnerContributionProgress: 0.14,
   },
   {
     id: 'ch-upcoming-enrolled-streak',

@@ -7,7 +7,10 @@ import {
   getGroupProgressTowardGoal,
   resolveGroupsAtTierColumns,
 } from '../../constants/communityChallenges';
-import { CHALLENGE_TIER_PROGRESS_TONE } from '../../constants/challengeTierVisuals';
+import {
+  CHALLENGE_TIER_DISPLAY_NAME,
+  CHALLENGE_TIER_PROGRESS_TONE,
+} from '../../constants/challengeTierVisuals';
 import { FEED_COHORT_META } from '../../constants/feedCohorts';
 import { Icons } from '../Icons';
 import { ChallengeDetailPanel } from './ChallengeDetailPanel';
@@ -39,6 +42,8 @@ export interface ChallengeFullDetailProps {
   highFiveByMemberId?: Record<string, number>;
   onHighFive?: (memberId: string) => void;
   onOpenShareout?: () => void;
+  /** Shown under “Your contribution” (prototype learner name). */
+  learnerDisplayName?: string;
 }
 
 /**
@@ -51,6 +56,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
   highFiveByMemberId,
   onHighFive,
   onOpenShareout,
+  learnerDisplayName = 'Priya',
 }) => {
   const meta = FEED_COHORT_META[challenge.cohortId];
   const isCompleted = challenge.lifecycle === 'completed';
@@ -60,6 +66,9 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
   const progressGoalLine = formatProgressGoalQuantityLine(challenge);
   const progressFallbackPct = `${Math.round(Math.min(1, Math.max(0, challenge.cardProgress)) * 100)}%`;
   const tierGroupsLayout = resolveGroupsAtTierColumns(challenge) ?? challenge.groupsAtMilestoneTier;
+  const learnerPoints =
+    challenge.members?.find((m) => m.isCurrentUser)?.contribution ?? null;
+  const tierReachedLabel = CHALLENGE_TIER_DISPLAY_NAME[challenge.visualTier];
 
   const lifecyclePillClass =
     challenge.lifecycle === 'active'
@@ -90,15 +99,51 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
 
       <div className="space-y-4 p-4 sm:p-5">
         {isCompleted && (
-          <div className="overflow-hidden rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] bg-[#E8F5EE] px-3 sm:px-5">
-            <div className="relative h-[200px] w-full overflow-hidden sm:h-[240px]">
-              <img
-                src="/challenges/completed-celebration-banner.png"
-                alt=""
-                className="h-full w-full object-contain object-right"
-                decoding="async"
-                loading="lazy"
-              />
+          <div className="overflow-hidden rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] bg-[#F0F9F4] px-4 py-5 sm:px-6">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-stretch sm:gap-8">
+              <div className="flex min-w-0 flex-1 flex-col justify-center gap-4">
+                <div>
+                  <p className="text-xl font-bold leading-tight tracking-tight text-[var(--cds-color-grey-975)] sm:text-2xl">
+                    Challenge complete!
+                  </p>
+                  <p className="mt-1 text-xl font-bold leading-tight tracking-tight text-[var(--cds-color-grey-975)] sm:text-2xl">
+                    Great job Group {challenge.groupIndex}!
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
+                    Tier reached{' '}
+                    <span className="font-semibold text-[var(--cds-color-grey-800)]">{tierReachedLabel}</span>
+                  </p>
+                  {learnerPoints != null && (
+                    <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
+                      Points earned{' '}
+                      <span className="font-semibold text-teal-600">
+                        {learnerPoints.toLocaleString()}
+                      </span>
+                    </p>
+                  )}
+                </div>
+                {onOpenShareout ? (
+                  <button
+                    type="button"
+                    onClick={onOpenShareout}
+                    className="inline-flex w-fit items-center justify-center gap-2 rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--cds-color-blue-800)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
+                  >
+                    <Icons.Share className="h-4 w-4 shrink-0 text-white" aria-hidden />
+                    Share
+                  </button>
+                ) : null}
+              </div>
+              <div className="relative mx-auto min-h-[180px] w-full max-w-md shrink-0 overflow-hidden sm:mx-0 sm:min-h-0 sm:max-w-[360px] sm:flex-1 sm:self-stretch">
+                <img
+                  src="/challenges/completed-celebration-banner.png"
+                  alt=""
+                  className="h-full min-h-[180px] w-full object-cover object-right sm:min-h-full"
+                  decoding="async"
+                  loading="lazy"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -262,6 +307,38 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
             </div>
           </div>
         )}
+
+        {challenge.milestones.length > 0 &&
+          !isUpcoming &&
+          !isCompleted &&
+          challenge.learnerContributionProgress != null && (
+            <div className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] p-4">
+              <h4 className="cds-subtitle-sm text-[var(--cds-color-grey-975)]">Your contribution</h4>
+              <p className="mt-1 cds-body-secondary font-semibold text-[var(--cds-color-grey-975)]">
+                {learnerDisplayName}
+              </p>
+              <ul className="mt-3 space-y-2">
+                <li className="flex items-center justify-between gap-3 rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="cds-body-secondary font-bold text-[var(--cds-color-grey-975)]">You</p>
+                    <p className="cds-body-tertiary text-[var(--cds-color-grey-600)]">
+                      {formatProgressGoalQuantityLineForFraction(
+                        challenge,
+                        challenge.learnerContributionProgress
+                      ) ?? `${Math.round(challenge.learnerContributionProgress * 100)}%`}{' '}
+                      toward the group goal
+                    </p>
+                  </div>
+                  <span
+                    className="shrink-0 rounded-full border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--cds-color-grey-600)] sm:text-[11px]"
+                    title="Preview: mock leaderboard badge"
+                  >
+                    Top 5 contributors
+                  </span>
+                </li>
+              </ul>
+            </div>
+          )}
       </div>
 
       <div

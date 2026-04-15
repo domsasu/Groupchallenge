@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import type { CommunityChallenge } from '../../constants/communityChallenges';
-import { Icons } from '../Icons';
 import { ChallengeLeaderboardSnippet } from './ChallengeLeaderboardSnippet';
 
 export interface ChallengeDetailPanelProps {
@@ -85,22 +84,12 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
       {isCompleted && challenge.outcome && (
         <div
           ref={outcomeHighlightRef}
-          className="flex flex-col gap-3 rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+          className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] p-4"
         >
-          <p className="min-w-0 flex-1 cds-body-secondary text-[var(--cds-color-grey-975)]">
+          <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
             Your group placed <strong>1st</strong> out of {challenge.groupCount} sub-groups. Your contribution rank:{' '}
             <strong>#{challenge.outcome.userRank}</strong>.
           </p>
-          {onOpenShareout && (
-            <button
-              type="button"
-              onClick={onOpenShareout}
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] px-4 py-2 cds-action-secondary text-[var(--cds-color-grey-975)] hover:bg-[var(--cds-color-grey-25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)] sm:self-center"
-            >
-              <Icons.Share className="h-4 w-4 shrink-0" aria-hidden />
-              Share
-            </button>
-          )}
         </div>
       )}
 
