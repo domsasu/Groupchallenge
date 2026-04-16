@@ -61,6 +61,10 @@ export interface CommunityChallenge {
     userRank: number;
     /** Headline number for shareout (e.g. peers in group) */
     shareoutPeerCount: number;
+    /** Celebration hero — award name (default Longest Streak in UI). */
+    awardLabel?: string;
+    /** Optional learner stat shown after the award (e.g. courses completed). */
+    completedCourseCount?: number;
   };
   members?: ChallengeMember[];
   /** Tier shown on challenge strip card illustration and footer (independent of milestone naming). */
@@ -264,6 +268,8 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
       won: true,
       userRank: 2,
       shareoutPeerCount: 72,
+      awardLabel: 'Longest Streak',
+      completedCourseCount: 4,
     },
     completedHeroSubline: 'Your group completed 200 Deep Learning courses!',
     currentTierIndex: 2,
@@ -534,6 +540,20 @@ export function getGroupProgressTowardGoal(
   const n = challenge.milestones.length;
   if (n <= 0) return 0;
   return Math.min(1, (tierColumnIndex + 1) / n);
+}
+
+/**
+ * Stable mock headcount per squad (~200 learners) for tooltips; varies slightly by group + challenge id.
+ */
+export function approxHeadcountForGroup(challenge: CommunityChallenge, groupNumber: number): number {
+  const base = challenge.approxGroupSize ?? 200;
+  const salt =
+    groupNumber * 31 +
+    challenge.groupCount * 7 +
+    challenge.id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const jitter = salt % 19; // 0..18
+  const n = base - 9 + jitter;
+  return Math.max(192, Math.min(208, n));
 }
 
 export function challengesForLifecycle(

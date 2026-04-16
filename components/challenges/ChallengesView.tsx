@@ -169,6 +169,9 @@ export const ChallengesView: React.FC = () => {
                 challenge={challengeForDetail}
                 optedIn={challengeForDetail.optedIn}
                 onToggleOptIn={() => toggleOptedIn(challengeForDetail.id)}
+                onResumeLearning={() => {
+                  window.alert('Resume learning would open your course (preview).');
+                }}
                 onOpenShareout={
                   challengeForDetail.lifecycle === 'completed' && challengeForDetail.outcome
                     ? () => {

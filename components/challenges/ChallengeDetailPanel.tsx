@@ -8,6 +8,8 @@ export interface ChallengeDetailPanelProps {
   optedIn: boolean;
   onToggleOptIn: () => void;
   onOpenShareout?: () => void;
+  /** Primary action when opted into an active challenge (e.g. jump back to course). */
+  onResumeLearning?: () => void;
 }
 
 export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
@@ -15,6 +17,7 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
   optedIn,
   onToggleOptIn,
   onOpenShareout,
+  onResumeLearning,
 }) => {
   const isCompleted = challenge.lifecycle === 'completed';
   const isUpcoming = challenge.lifecycle === 'upcoming';
@@ -86,7 +89,14 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
 
       {/* Primary CTAs for active (join) and upcoming (remind / set reminder) live in ChallengeFullDetail hero. */}
       {!isCompleted && !isUpcoming && optedIn && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => onResumeLearning?.()}
+            className="rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-4 py-2 cds-action-secondary text-[var(--cds-color-white)] shadow-sm transition hover:bg-[var(--cds-color-blue-800)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
+          >
+            Resume learning
+          </button>
           <button
             type="button"
             onClick={onToggleOptIn}

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { CommunityChallenge } from '../../constants/communityChallenges';
 import {
+  approxHeadcountForGroup,
   connectorSegmentFillPercentForModules,
   formatChallengeCardHeroLabel,
   formatProgressGoalQuantityLine,
@@ -107,13 +109,55 @@ function TierSquadStack({
   groupIds: number[];
 }) {
   const groups = [...groupIds].sort((a, b) => a - b);
+  const [flyout, setFlyout] = useState<{
+    key: string;
+    top: number;
+    left: number;
+    tipId: string;
+    squadLabel: string;
+    progressLine: string;
+    headcount: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!flyout) return;
+    const close = () => setFlyout(null);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [flyout]);
+
+  const openFlyoutForPill = (
+    key: string,
+    tipId: string,
+    el: HTMLElement,
+    squadLabel: string,
+    progressLine: string,
+    headcount: number
+  ) => {
+    const r = el.getBoundingClientRect();
+    setFlyout({
+      key,
+      top: r.bottom + 8,
+      left: r.left + r.width / 2,
+      tipId,
+      squadLabel,
+      progressLine,
+      headcount,
+    });
+  };
+
   return (
-    <div className="mt-0 flex w-full flex-col items-center" aria-label={`Groups at ${milestoneLabel}`}>
-      <div className="h-8 w-px shrink-0 bg-[var(--cds-color-grey-200)]" aria-hidden />
-      <div
-        className="mt-2 flex flex-col items-center gap-1.5"
-        role={groups.length > 0 ? 'list' : undefined}
-      >
+    <>
+      <div className="mt-0 flex w-full flex-col items-center" aria-label={`Groups at ${milestoneLabel}`}>
+        <div className="h-8 w-px shrink-0 bg-[var(--cds-color-grey-200)]" aria-hidden />
+        <div
+          className="mt-2 flex flex-col items-center gap-1.5"
+          role={groups.length > 0 ? 'list' : undefined}
+        >
         {groups.length > 0 ? (
           groups.map((g) => {
             const isLearnerGroup = g === challenge.groupIndex;
@@ -122,30 +166,33 @@ function TierSquadStack({
             const progressLine =
               formatProgressGoalQuantityLineForFraction(challenge, progress01) ??
               `${Math.round(progress01 * 100)}%`;
+            const headcount = approxHeadcountForGroup(challenge, g);
             const tipId = `challenge-${challenge.id}-group-${g}-tier-${milestoneIndex}-progress`;
+            const flyoutKey = `${milestoneIndex}-${g}`;
             return (
-              <div key={g} role="listitem" className="group relative inline-flex flex-col items-center">
+              <div
+                key={g}
+                role="listitem"
+                className="group relative inline-flex flex-col items-center overflow-visible"
+              >
                 <span
                   tabIndex={0}
                   aria-describedby={tipId}
-                  title={`${squad.label} · ${progressLine}`}
                   aria-label={`${squad.label}, progress ${progressLine}`}
+                  onMouseEnter={(e) =>
+                    openFlyoutForPill(flyoutKey, tipId, e.currentTarget, squad.label, progressLine, headcount)
+                  }
+                  onMouseLeave={() => setFlyout((cur) => (cur?.key === flyoutKey ? null : cur))}
+                  onFocus={(e) =>
+                    openFlyoutForPill(flyoutKey, tipId, e.currentTarget, squad.label, progressLine, headcount)
+                  }
+                  onBlur={() => setFlyout((cur) => (cur?.key === flyoutKey ? null : cur))}
                   className={`inline-flex max-w-[6rem] min-h-[28px] shrink-0 cursor-default items-center justify-center rounded-full border px-2 py-1 text-center text-[9px] font-bold leading-tight outline-none transition-[box-shadow,transform] hover:scale-[1.02] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-700)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--cds-color-grey-25)] ${
                     isLearnerGroup ? squad.active : squad.muted
                   }`}
                 >
                   {squad.label}
                 </span>
-                <div
-                  id={tipId}
-                  role="tooltip"
-                  className="pointer-events-none invisible absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-max max-w-[min(16rem,calc(100vw-2rem))] -translate-x-1/2 rounded-md bg-[var(--cds-color-grey-975)] px-2.5 py-2 text-left opacity-0 shadow-lg transition-opacity duration-150 group-hover:visible group-focus-within:visible group-hover:opacity-100 group-focus-within:opacity-100"
-                >
-                  <span className="block text-[10px] font-semibold text-white">{squad.label}</span>
-                  <span className="mt-0.5 block text-[10px] leading-snug text-white/90">
-                    Progress toward goal: {progressLine}
-                  </span>
-                </div>
               </div>
             );
           })
@@ -157,8 +204,34 @@ function TierSquadStack({
             —
           </span>
         )}
+        </div>
       </div>
-    </div>
+      {flyout != null &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            id={flyout.tipId}
+            role="tooltip"
+            style={{
+              position: 'fixed',
+              top: flyout.top,
+              left: flyout.left,
+              transform: 'translateX(-50%)',
+              zIndex: 100000,
+            }}
+            className="pointer-events-none w-max max-w-[min(16rem,calc(100vw-2rem))] rounded-md bg-[var(--cds-color-grey-975)] px-2.5 py-2 text-left shadow-lg"
+          >
+            <span className="block text-[10px] font-semibold text-white">{flyout.squadLabel}</span>
+            <span className="mt-0.5 block text-[10px] leading-snug text-white/90">
+              Progress toward goal: {flyout.progressLine}
+            </span>
+            <span className="mt-0.5 block text-[10px] leading-snug text-white/85">
+              {flyout.headcount} learners in this group
+            </span>
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 
@@ -177,6 +250,7 @@ export interface ChallengeFullDetailProps {
   optedIn: boolean;
   onToggleOptIn: () => void;
   onOpenShareout?: () => void;
+  onResumeLearning?: () => void;
 }
 
 /**
@@ -187,6 +261,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
   optedIn,
   onToggleOptIn,
   onOpenShareout,
+  onResumeLearning,
 }) => {
   const isCompleted = challenge.lifecycle === 'completed';
   const isUpcoming = challenge.lifecycle === 'upcoming';
@@ -231,8 +306,8 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
         : 'bg-white/20 text-white backdrop-blur-sm';
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-[var(--cds-elevation-level1)]">
-      <div className="relative bg-[#141518] px-4 pb-4 pt-4">
+    <div className="overflow-visible rounded-2xl border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-[var(--cds-elevation-level1)]">
+      <div className="relative overflow-hidden rounded-t-2xl bg-[#141518] px-4 pb-4 pt-4">
         <div
           className="absolute inset-0 bg-gradient-to-t from-[#141518] via-[#141518]/80 to-transparent"
           aria-hidden
@@ -306,7 +381,17 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                 </div>
                 {challenge.outcome && (
                   <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
-                    You received the award for <strong>Longest Streak</strong>.
+                    You received the award for{' '}
+                    <strong>{challenge.outcome.awardLabel ?? 'Longest Streak'}</strong>
+                    {challenge.outcome.completedCourseCount != null &&
+                    challenge.outcome.completedCourseCount > 0 ? (
+                      <>
+                        {', and completed '}
+                        <strong>{challenge.outcome.completedCourseCount}</strong>{' '}
+                        {challenge.outcome.completedCourseCount === 1 ? 'course' : 'courses'}
+                      </>
+                    ) : null}
+                    .
                   </p>
                 )}
                 {onOpenShareout ? (
@@ -353,15 +438,21 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
               <span className="cds-title-medium-sm text-[var(--cds-color-grey-975)]">
                 {FEED_COHORT_META[challenge.cohortId].pillLabel}
               </span>
-              <span
-                className={`inline-flex max-w-full shrink-0 items-center rounded-full border px-2.5 py-1 text-[10px] font-bold leading-tight ${learnerGroupSquad.active}`}
-              >
-                {learnerGroupSquad.label}
-              </span>
+              {challenge.id !== 'ch-active-ai-vibe-coding' && (
+                <span
+                  className={`inline-flex max-w-full shrink-0 items-center rounded-full border px-2.5 py-1 text-[10px] font-bold leading-tight ${learnerGroupSquad.active}`}
+                >
+                  {learnerGroupSquad.label}
+                </span>
+              )}
             </div>
             <div
               aria-label={showGroupPlacement ? 'Challenge progress' : 'Challenge progress (preview)'}
-              className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] p-4"
+              className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-4"
+              onMouseEnter={() => {
+                if (tierGroupsLayout != null) setTeamRankingsOpen(true);
+              }}
+              onMouseLeave={() => setTeamRankingsOpen(false)}
             >
             <div className="flex flex-wrap items-end justify-between gap-2">
               <p className="cds-body-secondary font-semibold text-[var(--cds-color-grey-975)]">Progress to goal</p>
@@ -370,20 +461,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
               </span>
             </div>
 
-            {tierGroupsLayout != null && (
-              <div className="mt-4 border-t border-[var(--cds-color-grey-100)] pt-4">
-                <button
-                  type="button"
-                  onClick={() => setTeamRankingsOpen((o) => !o)}
-                  aria-expanded={teamRankingsOpen}
-                  className="text-sm font-semibold text-[var(--cds-color-blue-700)] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
-                >
-                  {teamRankingsOpen ? 'Hide team rankings' : 'See team rankings'}
-                </button>
-              </div>
-            )}
-
-            <div className={tierGroupsLayout != null ? 'mt-4' : 'mt-5'} role="list">
+            <div className="mt-5" role="list">
               <div className="flex items-start gap-0">
                 {challenge.milestones.map((m, i) => {
                   const trackShowsLearnerProgress = optedIn;
@@ -440,17 +518,30 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                         {m.target && (
                           <span className="mt-2 line-clamp-2 text-[10px] text-[var(--cds-color-grey-600)]">{m.target}</span>
                         )}
-                        {tierGroupsLayout != null && teamRankingsOpen && (
+                        {tierGroupsLayout != null && (
                           <div
-                            className="mt-2 w-full min-w-0"
-                            aria-label={`Team rankings at ${m.target ?? m.label}`}
+                            className={`grid w-full min-w-0 transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
+                              teamRankingsOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                            }`}
+                            aria-hidden={!teamRankingsOpen}
                           >
-                            <TierSquadStack
-                              challenge={challenge}
-                              milestoneLabel={m.label}
-                              milestoneIndex={tierIndexForResolver}
-                              groupIds={groupIds}
-                            />
+                            <div
+                              className={`min-h-0 ${teamRankingsOpen ? 'overflow-visible' : 'overflow-hidden'}`}
+                            >
+                              <div
+                                className={`mt-2 w-full min-w-0 transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+                                  teamRankingsOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+                                }`}
+                                aria-label={`Team rankings at ${m.target ?? m.label}`}
+                              >
+                                <TierSquadStack
+                                  challenge={challenge}
+                                  milestoneLabel={m.label}
+                                  milestoneIndex={tierIndexForResolver}
+                                  groupIds={groupIds}
+                                />
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -500,6 +591,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
           optedIn={optedIn}
           onToggleOptIn={onToggleOptIn}
           onOpenShareout={onOpenShareout}
+          onResumeLearning={onResumeLearning}
         />
       </div>
     </div>
