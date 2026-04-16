@@ -24,43 +24,30 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
     confettiScheduledRef.current = false;
   }, [challenge.id]);
 
+  /** Fire as soon as a completed challenge with an outcome is shown (e.g. Completed tab), no scroll or delay. */
   useEffect(() => {
     if (!isCompleted || !challenge.outcome) return;
-    const el = outcomeHighlightRef.current;
-    if (!el) return;
+    if (confettiScheduledRef.current) return;
+    confettiScheduledRef.current = true;
 
-    let delayId: ReturnType<typeof setTimeout> | undefined;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (!entry?.isIntersecting || confettiScheduledRef.current) return;
-        confettiScheduledRef.current = true;
-
-        delayId = setTimeout(() => {
-          const rect = el.getBoundingClientRect();
-          const x = (rect.left + rect.width / 2) / window.innerWidth;
-          const y = (rect.top + rect.height / 2) / window.innerHeight;
-          const burst = {
-            origin: { x, y } as const,
-            particleCount: 85,
-            spread: 70,
-            startVelocity: 36,
-            ticks: 200,
-            gravity: 0.9,
-          };
-          void confetti({ ...burst, angle: 55 });
-          void confetti({ ...burst, angle: 125 });
-        }, 700);
-      },
-      { threshold: 0.35, rootMargin: '0px 0px -10% 0px' }
-    );
-
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      if (delayId !== undefined) clearTimeout(delayId);
-    };
+    queueMicrotask(() => {
+      const el = outcomeHighlightRef.current;
+      const rect = el?.getBoundingClientRect();
+      const w = window.innerWidth || 1;
+      const h = window.innerHeight || 1;
+      const x = rect ? (rect.left + rect.width / 2) / w : 0.5;
+      const y = rect ? (rect.top + rect.height / 2) / h : 0.45;
+      const burst = {
+        origin: { x, y } as const,
+        particleCount: 85,
+        spread: 70,
+        startVelocity: 36,
+        ticks: 200,
+        gravity: 0.9,
+      };
+      void confetti({ ...burst, angle: 55 });
+      void confetti({ ...burst, angle: 125 });
+    });
   }, [isCompleted, challenge.outcome, challenge.id]);
 
   return (
