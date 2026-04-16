@@ -78,6 +78,8 @@ export interface CommunityChallenge {
   learnerContributionProgress?: number;
   /** Optional strip/hero art URL; defaults to tier ring SVG from `visualTier`. */
   cardHeroImageSrc?: string;
+  /** When set, replaces “Great job {squad}!” on the completed-challenge celebration hero. */
+  completedHeroSubline?: string;
 }
 
 export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
@@ -91,7 +93,7 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     groupPlace: 2,
     approxGroupSize: 127,
     whyJoin:
-      'Working parents knocking out course modules when kids are asleep, at daycare, or away—about 30–60 minutes a day adds up as your group pushes toward 100 modules together.',
+      '#workingparents cohort: knocking out course modules when kids are asleep, at daycare, or away—about 30–60 minutes a day adds up as your group pushes toward 100 modules together.',
     milestones: [
       { id: 'm1', label: 'Silver', target: '25 modules' },
       { id: 'm2', label: 'Gold', target: '50 modules' },
@@ -107,23 +109,33 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     endsAt: '2026-04-22',
     daysLeft: 7,
     optedIn: true,
-    currentTierIndex: 1,
+    currentTierIndex: 3,
+    /**
+     * Aligned with `resolveGroupsAtTierColumns`: caps [25,50,75,100] place groups by
+     * completed modules (0–24 → Silver col, 25–49 → Gold, 50–74 → Platinum, 75–99 → Diamond).
+     */
     groupsAtMilestoneTier: [
-      [2],
-      [1, 3],
-      [4, 5],
       [],
+      [2],
+      [1, 5],
+      [3, 4],
     ],
     visualTier: 'gold',
-    cardProgress: 0.45,
+    /** Learner squad (Amber Foxes): 78/100 modules — strip + ChallengeFullDetail progress. */
+    cardProgress: 0.78,
     groupProgressTowardGoal: {
-      1: 0.72,
-      2: 0.28,
-      3: 0.45,
-      4: 0.68,
-      5: 0.32,
+      /** Red Apes — 52 modules (Platinum column). */
+      1: 0.52,
+      /** Blue Herons — 26 modules (Gold column). */
+      2: 0.26,
+      /** Amber Foxes — 78 modules (Diamond band, toward 100). */
+      3: 0.78,
+      /** Emerald Otters — 75 modules (Diamond band). */
+      4: 0.75,
+      /** Violet Pandas — 60 modules (Platinum column). */
+      5: 0.6,
     },
-    learnerContributionProgress: 0.14,
+    learnerContributionProgress: 0.06,
   },
   {
     id: 'ch-active-ai-vibe-coding',
@@ -135,7 +147,7 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     groupPlace: 1,
     approxGroupSize: 180,
     whyJoin:
-      'Vibe coding with AI is the future of design. Work alongside your group to complete by posting courses on your skills and share out your learnings with your crew!',
+      '#AIpowered cohort knows that vibe coding with AI is the future of design. Work alongside your group to complete by posting courses on your skills and share out your learnings with your crew!',
     milestones: [
       { id: 'v1', label: 'First vibe', target: '1 course' },
       { id: 'v2', label: 'Building', target: '2 courses' },
@@ -169,8 +181,8 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     whyJoin:
       'Consistency beats intensity: a two-week streak wires a cue–routine–reward loop that supports any certificate path.',
     milestones: [
-      { id: 'm1', label: 'Week 1', target: '7 days logged' },
-      { id: 'm2', label: 'Week 2', target: '14 days logged' },
+      { id: 'm1', label: 'Week 1', target: '7 days of learning' },
+      { id: 'm2', label: 'Week 2', target: '14 days of learning' },
     ],
     steps: [
       'Log at least 20 minutes of learning on each streak day.',
@@ -226,15 +238,15 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
   },
   {
     id: 'ch-completed-enrolled-relay',
-    name: 'March Team Relay',
-    cohortId: 'enrolled',
+    name: 'Deep learning challenge',
+    cohortId: 'ai',
     lifecycle: 'completed',
-    groupIndex: 4,
-    groupCount: 5,
+    groupIndex: 6,
+    groupCount: 6,
     groupPlace: 1,
     approxGroupSize: 251,
     whyJoin:
-      'Teams that split modules by strength finish faster—this challenge practiced delegation and accountability.',
+      'Teams in the #AIpowered cohort work together to complete the most Deep Learning content.',
     milestones: [
       { id: 'm1', label: 'Relay leg 1', target: '25% course' },
       { id: 'm2', label: 'Relay leg 2', target: '50% course' },
@@ -253,8 +265,9 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
       userRank: 2,
       shareoutPeerCount: 72,
     },
+    completedHeroSubline: 'Your group completed 200 Deep Learning courses!',
     currentTierIndex: 2,
-    groupsAtMilestoneTier: [[], [], [1, 2, 3, 4, 5]],
+    groupsAtMilestoneTier: [[], [], [1, 2, 3, 4, 5, 6]],
     visualTier: 'diamond',
     cardProgress: 1,
     members: [
@@ -416,6 +429,28 @@ export function tierColumnIndexForCompletedUnits(completed: number, caps: number
     if (c < caps[i]) return i;
   }
   return caps.length - 1;
+}
+
+/**
+ * Fill % for the connector **before** milestone `segmentIndex + 1` (same index as in ChallengeFullDetail: `i > 0` → `segmentIndex = i - 1`).
+ * Each segment spans the interval between consecutive caps: `[caps[k], caps[k+1]]` for `k = segmentIndex`
+ * (e.g. caps [25,50,75,100] → segment 0 is 25→50, segment 1 is 50→75, segment 2 is 75→100).
+ */
+export function connectorSegmentFillPercentForModules(
+  segmentIndex: number,
+  caps: number[],
+  unitsCompleted: number
+): number {
+  if (caps.length < 2) return 0;
+  const maxSeg = caps.length - 2;
+  if (segmentIndex < 0 || segmentIndex > maxSeg) return 0;
+  const lo = caps[segmentIndex];
+  const hi = caps[segmentIndex + 1];
+  if (hi <= lo) return 0;
+  const m = Math.max(0, unitsCompleted);
+  if (m <= lo) return 0;
+  if (m >= hi) return 100;
+  return ((m - lo) / (hi - lo)) * 100;
 }
 
 /**

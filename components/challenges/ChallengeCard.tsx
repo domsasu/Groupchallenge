@@ -95,7 +95,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelec
             </p>
           )}
           {isActive && challenge.optedIn && (
-            <p className="text-[9px] font-semibold leading-tight text-[var(--cds-color-blue-700)]">Joined</p>
+            <p className="pt-[2pt] text-xs font-semibold leading-tight text-[var(--cds-color-blue-700)]">Joined</p>
           )}
           <div className="mt-auto flex flex-col gap-1">
             {isCompleted && challenge.outcome?.won && (

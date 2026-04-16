@@ -18,7 +18,8 @@ export const SuggestChallengeStripCard: React.FC<SuggestChallengeStripCardProps>
   onSelect,
 }) => {
   const meta = FEED_COHORT_META[cohortId];
-  const headline = `Add a challenge for ${meta.pillLabel}`;
+  const pillForSuggest = cohortId === 'workingparents' ? '#workingparent' : meta.pillLabel;
+  const headline = `Add a challenge for ${pillForSuggest}`;
 
   return (
     <button

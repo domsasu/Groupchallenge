@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import type { CommunityChallenge } from '../../constants/communityChallenges';
+import { Icons } from '../Icons';
 
 export interface ChallengeDetailPanelProps {
   challenge: CommunityChallenge;
@@ -66,56 +67,32 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
       {isCompleted && challenge.outcome && (
         <div
           ref={outcomeHighlightRef}
-          className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] p-4"
+          className="rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-white)] px-4 pb-4 pt-0"
         >
-          <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
-            Your group placed <strong>1st</strong> out of {challenge.groupCount} sub-groups.
-          </p>
-        </div>
-      )}
-
-      {!isCompleted && isUpcoming && (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          {optedIn ? (
-            <span
-              className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] px-4 py-2 cds-action-secondary text-[var(--cds-color-grey-975)]"
-              role="status"
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <p className="cds-body-secondary min-w-0 flex-1 text-[var(--cds-color-grey-975)]">
+              Your group placed <strong>1st</strong> out of {challenge.groupCount} teams.
+            </p>
+            <button
+              type="button"
+              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] px-3 py-2 text-left cds-action-secondary text-[var(--cds-color-grey-975)] shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
             >
-              Set reminder
-            </span>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={onToggleOptIn}
-                className="rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-4 py-2 cds-action-secondary text-[var(--cds-color-white)] hover:bg-[var(--cds-color-blue-800)]"
-              >
-                Remind me
-              </button>
-              <button
-                type="button"
-                onClick={onToggleOptIn}
-                className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] px-4 py-2 cds-action-secondary text-[var(--cds-color-grey-975)] hover:bg-[var(--cds-color-grey-25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
-              >
-                Join challenge
-              </button>
-            </>
-          )}
+              View team
+              <Icons.ChevronDown className="h-4 w-4 shrink-0 text-[var(--cds-color-grey-600)]" aria-hidden />
+            </button>
+          </div>
         </div>
       )}
 
-      {!isCompleted && !isUpcoming && (
+      {/* Primary CTAs for active (join) and upcoming (remind / set reminder) live in ChallengeFullDetail hero. */}
+      {!isCompleted && !isUpcoming && optedIn && (
         <div className="flex flex-wrap gap-2 pt-1">
           <button
             type="button"
             onClick={onToggleOptIn}
-            className={`rounded-[var(--cds-border-radius-100)] px-4 py-2 cds-action-secondary ${
-              optedIn
-                ? 'border-0 bg-transparent text-[var(--cds-color-blue-700)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]'
-                : 'bg-[var(--cds-color-blue-700)] text-[var(--cds-color-white)] hover:bg-[var(--cds-color-blue-800)]'
-            }`}
+            className="rounded-[var(--cds-border-radius-100)] border-0 bg-transparent px-4 py-2 cds-action-secondary text-[var(--cds-color-blue-700)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
           >
-            {optedIn ? 'Leave challenge' : 'Join challenge'}
+            Leave challenge
           </button>
         </div>
       )}
