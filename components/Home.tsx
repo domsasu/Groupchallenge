@@ -27,7 +27,7 @@ import {
   MOCK_COMMUNITY_CHALLENGES,
   type CommunityChallenge,
 } from '../constants/communityChallenges';
-import { CHALLENGE_TIER_ART_SRC, CHALLENGE_TIER_DISPLAY_NAME } from '../constants/challengeTierVisuals';
+import { CHALLENGE_TIER_ART_SRC } from '../constants/challengeTierVisuals';
 import type { CommunitySurface } from './FeedPage';
 
 // Assessment sub-skill results type - matches App.tsx
@@ -397,8 +397,7 @@ function HomeSidebarMiniChallenge({
       : challenge.lifecycle === 'upcoming'
         ? 'bg-amber-500/90 text-white'
         : 'bg-[var(--cds-color-grey-200)] text-[var(--cds-color-grey-800)]';
-  const tierName = CHALLENGE_TIER_DISPLAY_NAME[challenge.visualTier];
-  const tierSrc = CHALLENGE_TIER_ART_SRC[challenge.visualTier];
+  const tierSrc = challenge.cardHeroImageSrc ?? CHALLENGE_TIER_ART_SRC[challenge.visualTier];
   const progressLine =
     formatProgressGoalQuantityLine(challenge) ??
     `${Math.round(Math.min(1, Math.max(0, challenge.cardProgress)) * 100)}%`;
@@ -415,10 +414,8 @@ function HomeSidebarMiniChallenge({
         <p className="mt-1 text-[11px] leading-snug text-[var(--cds-color-grey-600)]">
           {cohortPill} challenge
         </p>
-        <p className="mt-1 text-[11px] leading-snug text-[var(--cds-color-grey-600)]">
-          <span>{tierName}</span>
-          <span> · </span>
-          <span className="font-medium tabular-nums">{progressLine}</span>
+        <p className="mt-1 text-[11px] font-medium leading-snug tabular-nums text-[var(--cds-color-grey-600)]">
+          {progressLine}
         </p>
       </div>
       <div className="flex w-[min(88px,28%)] min-w-[72px] shrink-0 flex-col overflow-hidden rounded-[calc(var(--cds-border-radius-100)-2px)] bg-[#141518]">

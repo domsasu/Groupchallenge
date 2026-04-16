@@ -84,7 +84,19 @@ export const ChallengesView: React.FC = () => {
 
   const toggleOptedIn = useCallback((id: string) => {
     setChallenges((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, optedIn: !c.optedIn } : c))
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        const next = !c.optedIn;
+        return {
+          ...c,
+          optedIn: next,
+          learnerContributionProgress: next
+            ? c.learnerContributionProgress == null
+              ? 0
+              : c.learnerContributionProgress
+            : undefined,
+        };
+      })
     );
   }, []);
 

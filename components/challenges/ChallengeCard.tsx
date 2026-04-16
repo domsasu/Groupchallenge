@@ -1,10 +1,10 @@
 import React from 'react';
-import { formatChallengeCardHeroLabel, type CommunityChallenge } from '../../constants/communityChallenges';
 import {
-  CHALLENGE_TIER_ART_SRC,
-  CHALLENGE_TIER_DISPLAY_NAME,
-  CHALLENGE_TIER_PROGRESS_TONE,
-} from '../../constants/challengeTierVisuals';
+  formatChallengeCardHeroLabel,
+  formatProgressGoalQuantityLine,
+  type CommunityChallenge,
+} from '../../constants/communityChallenges';
+import { CHALLENGE_TIER_ART_SRC, CHALLENGE_TIER_PROGRESS_TONE } from '../../constants/challengeTierVisuals';
 import { FEED_COHORT_META } from '../../constants/feedCohorts';
 import { Icons } from '../Icons';
 
@@ -20,6 +20,7 @@ export interface ChallengeCardProps {
 export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelected, onSelect }) => {
   const isCompleted = challenge.lifecycle === 'completed';
   const isUpcoming = challenge.lifecycle === 'upcoming';
+  const isActive = challenge.lifecycle === 'active';
 
   const lifecyclePillClass =
     challenge.lifecycle === 'active'
@@ -28,14 +29,19 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelec
         ? 'bg-amber-500/90 text-white'
         : 'bg-white/20 text-white backdrop-blur-sm';
 
-  const tierSrc = CHALLENGE_TIER_ART_SRC[challenge.visualTier];
-  const tierName = CHALLENGE_TIER_DISPLAY_NAME[challenge.visualTier];
+  const tierSrc = challenge.cardHeroImageSrc ?? CHALLENGE_TIER_ART_SRC[challenge.visualTier];
   const progressTone = CHALLENGE_TIER_PROGRESS_TONE[challenge.visualTier];
   const progressPct = Math.min(100, Math.max(0, Math.round(challenge.cardProgress * 100)));
+  const moduleOrGoalLine =
+    formatProgressGoalQuantityLine(challenge) ?? `${progressPct}%`;
+
+  const showGroupProgressBar = !isUpcoming && (isCompleted || challenge.optedIn);
 
   const cardAriaLabel = isUpcoming
     ? `${challenge.name}. Show details below.`
-    : `${challenge.name}, ${tierName} tier. Show details below.`;
+    : !showGroupProgressBar
+      ? `${challenge.name}. Show details below.`
+      : `${challenge.name}. ${moduleOrGoalLine}.${challenge.optedIn ? ' Joined.' : ''} Show details below.`;
 
   return (
     <button
@@ -67,7 +73,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelec
               decoding="async"
             />
           </div>
-          {!isUpcoming && (
+          {showGroupProgressBar && (
             <div
               className="relative z-10 mt-auto h-1 w-full shrink-0 bg-white/15"
               role="progressbar"
@@ -84,9 +90,12 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelec
         <div className="flex min-h-0 flex-1 flex-col justify-start gap-0.5 bg-[var(--cds-color-white)] px-2 pb-2 pt-1.5">
           <p className="line-clamp-2 text-[13px] font-bold leading-tight text-[var(--cds-color-grey-975)]">{challenge.name}</p>
           {!isUpcoming && (
-            <p className="text-[10px] font-semibold leading-snug text-[var(--cds-color-grey-600)]">
-              {tierName} tier
+            <p className="text-[10px] font-semibold leading-snug tabular-nums text-[var(--cds-color-grey-600)]">
+              {moduleOrGoalLine}
             </p>
+          )}
+          {isActive && challenge.optedIn && (
+            <p className="text-[9px] font-semibold leading-tight text-[var(--cds-color-blue-700)]">Joined</p>
           )}
           <div className="mt-auto flex flex-col gap-1">
             {isCompleted && challenge.outcome?.won && (

@@ -179,7 +179,6 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
   const tierGroupsLayout = resolveGroupsAtTierColumns(challenge) ?? challenge.groupsAtMilestoneTier;
   const learnerPoints =
     challenge.members?.find((m) => m.isCurrentUser)?.contribution ?? null;
-  const recognitionIsYou = challenge.members?.some((m) => m.isCurrentUser) ?? false;
   const learnerGroupSquad = groupSquadForIndex(challenge.groupIndex);
   const [teamRankingsOpen, setTeamRankingsOpen] = useState(false);
   const [displayPoints, setDisplayPoints] = useState(0);
@@ -248,20 +247,6 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <div className="w-fit max-w-full self-start rounded-[var(--cds-border-radius-100)] border border-emerald-200/90 bg-[#F0F9F4] px-3 py-2.5 shadow-sm">
-                    <p className="cds-subtitle-sm text-[var(--cds-color-grey-975)]">Recognition</p>
-                    <p className="mt-1 cds-body-secondary text-[var(--cds-color-grey-975)]">
-                      {recognitionIsYou ? (
-                        <>
-                          You received the award for <strong>Longest Streak</strong>.
-                        </>
-                      ) : (
-                        <>
-                          This learner received the award for <strong>Longest Streak</strong>.
-                        </>
-                      )}
-                    </p>
-                  </div>
                   {learnerPoints != null && (
                     <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
                       Points earned{' '}
@@ -299,13 +284,6 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
           <span className="shrink-0 text-lg font-semibold leading-snug text-[var(--cds-color-grey-975)] sm:text-xl">
             {meta.pillLabel}
           </span>
-          {showGroupPlacement && (
-            <span
-              className={`w-fit shrink-0 rounded-full border px-2.5 py-0.5 cds-body-secondary ${learnerGroupSquad.muted}`}
-            >
-              {learnerGroupSquad.label}
-            </span>
-          )}
         </div>
 
         {challenge.milestones.length > 0 && isUpcoming && (
@@ -338,10 +316,11 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
               <div className="flex items-start gap-0">
                 {challenge.milestones.map((m, i) => {
                   const isHeadStep = i === tierIdx;
-                  const upcoming = !isCompleted && i > tierIdx;
                   const gapCount = Math.max(0, challenge.milestones.length - 1);
                   const segmentFillPct =
-                    i > 0 ? connectorSegmentFillPercent(i - 1, gapCount, challenge.cardProgress) : 0;
+                    i > 0 && tierIdx > 0
+                      ? connectorSegmentFillPercent(i - 1, gapCount, challenge.cardProgress)
+                      : 0;
                   return (
                     <React.Fragment key={m.id}>
                       {i > 0 && (
@@ -374,15 +353,8 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                             {milestoneQuantityLabel(m, i)}
                           </span>
                         </span>
-                        <span
-                          className={`mt-2 line-clamp-2 text-[11px] font-semibold leading-tight ${
-                            upcoming ? 'text-[var(--cds-color-grey-500)]' : 'text-[var(--cds-color-grey-975)]'
-                          }`}
-                        >
-                          {m.label}
-                        </span>
                         {m.target && (
-                          <span className="mt-0.5 line-clamp-2 text-[10px] text-[var(--cds-color-grey-600)]">{m.target}</span>
+                          <span className="mt-2 line-clamp-2 text-[10px] text-[var(--cds-color-grey-600)]">{m.target}</span>
                         )}
                       </div>
                     </React.Fragment>

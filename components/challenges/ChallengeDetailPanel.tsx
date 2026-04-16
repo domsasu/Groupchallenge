@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import type { CommunityChallenge } from '../../constants/communityChallenges';
-import { ChallengeLeaderboardSnippet } from './ChallengeLeaderboardSnippet';
 
 export interface ChallengeDetailPanelProps {
   challenge: CommunityChallenge;
@@ -83,14 +82,9 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
           className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] p-4"
         >
           <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
-            Your group placed <strong>1st</strong> out of {challenge.groupCount} sub-groups. Your contribution rank:{' '}
-            <strong>#{challenge.outcome.userRank}</strong>.
+            Your group placed <strong>1st</strong> out of {challenge.groupCount} sub-groups.
           </p>
         </div>
-      )}
-
-      {isCompleted && challenge.members?.length && (
-        <ChallengeLeaderboardSnippet members={challenge.members} />
       )}
 
       {!isCompleted && isUpcoming && (

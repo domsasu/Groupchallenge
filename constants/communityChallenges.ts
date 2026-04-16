@@ -76,6 +76,8 @@ export interface CommunityChallenge {
    * Learner’s share of progress toward the same goal as the challenge (0–1), for active-detail “Your contribution”.
    */
   learnerContributionProgress?: number;
+  /** Optional strip/hero art URL; defaults to tier ring SVG from `visualTier`. */
+  cardHeroImageSrc?: string;
 }
 
 export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
@@ -122,6 +124,38 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
       5: 0.32,
     },
     learnerContributionProgress: 0.14,
+  },
+  {
+    id: 'ch-active-ai-vibe-coding',
+    name: "It's a Vibe",
+    cohortId: 'ai',
+    lifecycle: 'active',
+    groupIndex: 2,
+    groupCount: 4,
+    groupPlace: 1,
+    approxGroupSize: 180,
+    whyJoin:
+      'Vibe coding with AI is the future of design. Work alongside your group to complete by posting courses on your skills and share out your learnings with your crew!',
+    milestones: [
+      { id: 'v1', label: 'First vibe', target: '1 course' },
+      { id: 'v2', label: 'Building', target: '2 courses' },
+      { id: 'v3', label: 'Complete', target: '3 courses' },
+    ],
+    steps: [
+      'Start with a one-line goal in plain language, then ask the AI for the smallest possible step—keep scope tiny so you can see what it got right or wrong before you add complexity.',
+      'In class, compare outputs with a partner: read the AI’s answer out loud, name one thing you’d keep and one you’d change, then revise your prompt together before moving on.',
+      'Pause after each iteration and jot a sentence on what you learned about how the model behaves—early on, noticing patterns beats shipping fast.',
+    ],
+    startsAt: '2026-04-03',
+    endsAt: '2026-04-27',
+    daysLeft: 12,
+    optedIn: false,
+    currentTierIndex: 0,
+    /** Team rankings: all squads shown under the first milestone (1 course); none at 2–3 courses yet. */
+    groupsAtMilestoneTier: [[1, 2, 3, 4], [], []],
+    visualTier: 'platinum',
+    cardProgress: 0.55,
+    cardHeroImageSrc: '/challenges/vibe-coding-challenge.svg',
   },
   {
     id: 'ch-upcoming-enrolled-streak',
@@ -327,6 +361,12 @@ export function formatProgressGoalQuantityLine(challenge: CommunityChallenge): s
   }
   if (/\blessons?\b/.test(t)) {
     return `${completed} / ${total} lessons`;
+  }
+  if (/\bcourses?\b/.test(t)) {
+    return `${completed} / ${total} courses`;
+  }
+  if (/\bclasses?\b/.test(t)) {
+    return `${completed} / ${total} classes`;
   }
   return `${completed} / ${total}`;
 }
