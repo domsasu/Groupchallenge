@@ -10,6 +10,7 @@ import {
 import { FEED_COHORT_META, JOINED_FEED_COHORT_IDS, type FeedCohortId } from '../../constants/feedCohorts';
 import { ChallengeCard } from './ChallengeCard';
 import { ChallengeFullDetail } from './ChallengeFullDetail';
+import { ChallengeJoinFlow } from './ChallengeJoinFlow';
 import { SuggestChallengeStripCard } from './SuggestChallengeStripCard';
 
 const STATUS_TABS: { id: ChallengeLifecycle; label: string }[] = [
@@ -100,6 +101,47 @@ export const ChallengesView: React.FC = () => {
     );
   }, []);
 
+  const [joinFlowChallengeId, setJoinFlowChallengeId] = useState<string | null>(null);
+
+  const joinFlowChallenge = useMemo(
+    () => (joinFlowChallengeId ? challenges.find((c) => c.id === joinFlowChallengeId) ?? null : null),
+    [joinFlowChallengeId, challenges]
+  );
+
+  /** Opt in + random squad immediately so the strip card shows Joined and progress before the modal finishes. */
+  const beginJoinChallenge = useCallback((id: string) => {
+    setJoinFlowChallengeId(id);
+    setChallenges((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        const groupIndex = Math.floor(Math.random() * c.groupCount) + 1;
+        return {
+          ...c,
+          optedIn: true,
+          groupIndex,
+          learnerContributionProgress:
+            c.learnerContributionProgress == null ? 0 : c.learnerContributionProgress,
+        };
+      })
+    );
+  }, []);
+
+  const completeJoinChallenge = useCallback((id: string, groupIndex: number) => {
+    setChallenges((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        return {
+          ...c,
+          optedIn: true,
+          groupIndex,
+          learnerContributionProgress:
+            c.learnerContributionProgress == null ? 0 : c.learnerContributionProgress,
+        };
+      })
+    );
+    setJoinFlowChallengeId(null);
+  }, []);
+
   const selectChallenge = (id: string) => {
     setSelection((prev) => (prev?.kind === 'challenge' && prev.id === id ? null : { kind: 'challenge', id }));
   };
@@ -169,6 +211,7 @@ export const ChallengesView: React.FC = () => {
                 challenge={challengeForDetail}
                 optedIn={challengeForDetail.optedIn}
                 onToggleOptIn={() => toggleOptedIn(challengeForDetail.id)}
+                onRequestJoinChallenge={() => beginJoinChallenge(challengeForDetail.id)}
                 onResumeLearning={() => {
                   window.alert('Resume learning would open your course (preview).');
                 }}
@@ -228,6 +271,14 @@ export const ChallengesView: React.FC = () => {
           </>
         )}
       </div>
+
+      {joinFlowChallenge && (
+        <ChallengeJoinFlow
+          challenge={joinFlowChallenge}
+          onClose={() => setJoinFlowChallengeId(null)}
+          onComplete={(groupIndex) => completeJoinChallenge(joinFlowChallenge.id, groupIndex)}
+        />
+      )}
     </div>
   );
 };

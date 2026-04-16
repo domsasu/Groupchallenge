@@ -13,6 +13,7 @@ import {
   resolveGroupsAtTierColumns,
   tierColumnIndexForCompletedUnits,
 } from '../../constants/communityChallenges';
+import { groupSquadForChallenge } from '../../constants/challengeSquads';
 import { FEED_COHORT_META } from '../../constants/feedCohorts';
 import { Icons } from '../Icons';
 import { ChallengeDetailPanel } from './ChallengeDetailPanel';
@@ -46,55 +47,6 @@ function groupIdsAndTierIndexForMilestoneColumn(
   const tier = milestoneIndex + 1;
   if (tier >= layout.length) return { groupIds: [], tierIndexForResolver: milestoneIndex };
   return { groupIds: layout[tier] ?? [], tierIndexForResolver: tier };
-}
-
-/** 1-based group index → colored squad name (prototype: five teams). */
-function groupSquadForIndex(g: number): {
-  label: string;
-  muted: string;
-  active: string;
-} {
-  const squads: Record<number, { label: string; muted: string; active: string }> = {
-    1: {
-      label: 'Red Apes',
-      muted: 'border-red-200 bg-red-50 text-red-950',
-      active: 'border-red-500 bg-red-100 text-red-950 shadow-sm ring-2 ring-red-400/40',
-    },
-    2: {
-      label: 'Blue Herons',
-      muted: 'border-sky-200 bg-sky-50 text-sky-950',
-      active: 'border-sky-500 bg-sky-100 text-sky-950 shadow-sm ring-2 ring-sky-400/40',
-    },
-    3: {
-      label: 'Amber Foxes',
-      muted: 'border-amber-200 bg-amber-50 text-amber-950',
-      active: 'border-amber-500 bg-amber-100 text-amber-950 shadow-sm ring-2 ring-amber-400/40',
-    },
-    4: {
-      label: 'Emerald Otters',
-      muted: 'border-emerald-200 bg-emerald-50 text-emerald-950',
-      active: 'border-emerald-500 bg-emerald-100 text-emerald-950 shadow-sm ring-2 ring-emerald-400/40',
-    },
-    5: {
-      label: 'Violet Pandas',
-      muted: 'border-violet-200 bg-violet-50 text-violet-950',
-      active: 'border-violet-500 bg-violet-100 text-violet-950 shadow-sm ring-2 ring-violet-400/40',
-    },
-    6: {
-      label: 'Copper Monsteras',
-      muted: 'border-rose-300 bg-rose-50 text-rose-950',
-      active: 'border-rose-500 bg-rose-100 text-rose-950 shadow-sm ring-2 ring-rose-400/40',
-    },
-  };
-  return (
-    squads[g] ?? {
-      label: `Group ${g}`,
-      muted:
-        'border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] text-[var(--cds-color-grey-800)]',
-      active:
-        'border-[var(--cds-color-blue-500)] bg-[var(--cds-color-blue-25)] text-[var(--cds-color-grey-975)] shadow-sm ring-2 ring-[var(--cds-color-blue-400)]/35',
-    }
-  );
 }
 
 function TierSquadStack({
@@ -161,7 +113,7 @@ function TierSquadStack({
         {groups.length > 0 ? (
           groups.map((g) => {
             const isLearnerGroup = g === challenge.groupIndex;
-            const squad = groupSquadForIndex(g);
+            const squad = groupSquadForChallenge(challenge, g);
             const progress01 = getGroupProgressTowardGoal(challenge, g, milestoneIndex);
             const progressLine =
               formatProgressGoalQuantityLineForFraction(challenge, progress01) ??
@@ -249,6 +201,8 @@ export interface ChallengeFullDetailProps {
   challenge: CommunityChallenge;
   optedIn: boolean;
   onToggleOptIn: () => void;
+  /** Opens the multi-step join flow (active/upcoming). Falls back to `onToggleOptIn` if omitted. */
+  onRequestJoinChallenge?: () => void;
   onOpenShareout?: () => void;
   onResumeLearning?: () => void;
 }
@@ -260,6 +214,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
   challenge,
   optedIn,
   onToggleOptIn,
+  onRequestJoinChallenge,
   onOpenShareout,
   onResumeLearning,
 }) => {
@@ -291,7 +246,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
     formatProgressGoalQuantityLine(challenge);
   const progressFallbackPct = `${Math.round(Math.min(1, Math.max(0, challenge.cardProgress)) * 100)}%`;
   const tierGroupsLayout = resolveGroupsAtTierColumns(challenge) ?? challenge.groupsAtMilestoneTier;
-  const learnerGroupSquad = groupSquadForIndex(challenge.groupIndex);
+  const learnerGroupSquad = groupSquadForChallenge(challenge, challenge.groupIndex);
   const [teamRankingsOpen, setTeamRankingsOpen] = useState(false);
 
   useEffect(() => {
@@ -310,6 +265,8 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
     : '';
   const outcomeCourseCount = challenge.outcome?.completedCourseCount;
   const outcomeHasCourseStat = outcomeCourseCount != null && outcomeCourseCount > 0;
+
+  const joinChallenge = onRequestJoinChallenge ?? onToggleOptIn;
 
   return (
     <div className="overflow-visible rounded-2xl border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-[var(--cds-elevation-level1)]">
@@ -335,7 +292,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
               {isActive && !optedIn && (
                 <button
                   type="button"
-                  onClick={onToggleOptIn}
+                  onClick={joinChallenge}
                   className="rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-4 py-2 cds-action-secondary text-[var(--cds-color-white)] hover:bg-[var(--cds-color-blue-800)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
                 >
                   Join challenge
@@ -360,7 +317,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={onToggleOptIn}
+                    onClick={joinChallenge}
                     className="rounded-[var(--cds-border-radius-100)] border border-white/35 bg-white/10 px-4 py-2 cds-action-secondary text-white hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
                   >
                     Join challenge
