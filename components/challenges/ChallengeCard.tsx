@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   formatChallengeCardHeroLabel,
-  formatProgressGoalQuantityLine,
+  formatProgressGoalTotalLabel,
   type CommunityChallenge,
 } from '../../constants/communityChallenges';
 import { CHALLENGE_TIER_ART_SRC, CHALLENGE_TIER_PROGRESS_TONE } from '../../constants/challengeTierVisuals';
@@ -32,8 +32,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, isSelec
   const tierSrc = challenge.cardHeroImageSrc ?? CHALLENGE_TIER_ART_SRC[challenge.visualTier];
   const progressTone = CHALLENGE_TIER_PROGRESS_TONE[challenge.visualTier];
   const progressPct = Math.min(100, Math.max(0, Math.round(challenge.cardProgress * 100)));
-  const moduleOrGoalLine =
-    formatProgressGoalQuantityLine(challenge) ?? `${progressPct}%`;
+  const moduleOrGoalLine = formatProgressGoalTotalLabel(challenge) ?? `${progressPct}%`;
 
   const showGroupProgressBar = !isUpcoming && (isCompleted || challenge.optedIn);
 

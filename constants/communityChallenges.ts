@@ -384,6 +384,45 @@ export function formatProgressGoalQuantityLine(challenge: CommunityChallenge): s
   return `${completed} / ${total}`;
 }
 
+/**
+ * Goal-only line for compact surfaces (e.g. challenge strip cards): "3 courses", "100 modules".
+ * Does not include progress toward the goal; the bar still reflects `cardProgress`.
+ */
+export function formatProgressGoalTotalLabel(challenge: CommunityChallenge): string | null {
+  const milestones = challenge.milestones;
+  if (milestones.length === 0) return null;
+  const lastTarget = milestones[milestones.length - 1]?.target;
+  if (!lastTarget) return null;
+  const numbers = lastTarget.match(/\d+(?:\.\d+)?/g);
+  if (!numbers?.length) return null;
+  const total = parseFloat(numbers[numbers.length - 1]);
+  if (!Number.isFinite(total) || total <= 0) return null;
+  const totalRounded = Math.round(total);
+  const t = lastTarget.toLowerCase();
+  if (/%/.test(t)) {
+    return `${totalRounded}%`;
+  }
+  if (/\bhrs?\b|hours?/.test(t)) {
+    return `${totalRounded} hrs`;
+  }
+  if (/\bdays?\b/.test(t)) {
+    return `${totalRounded} days`;
+  }
+  if (/\bmodules?\b/.test(t)) {
+    return `${totalRounded} modules`;
+  }
+  if (/\blessons?\b/.test(t)) {
+    return `${totalRounded} lessons`;
+  }
+  if (/\bcourses?\b/.test(t)) {
+    return `${totalRounded} courses`;
+  }
+  if (/\bclasses?\b/.test(t)) {
+    return `${totalRounded} classes`;
+  }
+  return `${totalRounded}`;
+}
+
 /** Same as formatProgressGoalQuantityLine but with an explicit progress fraction (e.g. another group’s pace). */
 export function formatProgressGoalQuantityLineForFraction(
   challenge: CommunityChallenge,
