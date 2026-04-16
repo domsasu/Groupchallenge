@@ -305,6 +305,12 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
         ? 'bg-amber-500/90 text-white'
         : 'bg-white/20 text-white backdrop-blur-sm';
 
+  const outcomeAwardLabel = challenge.outcome
+    ? (challenge.outcome.awardLabel ?? 'Longest Streak').replace(/\.\s*$/, '')
+    : '';
+  const outcomeCourseCount = challenge.outcome?.completedCourseCount;
+  const outcomeHasCourseStat = outcomeCourseCount != null && outcomeCourseCount > 0;
+
   return (
     <div className="overflow-visible rounded-2xl border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] shadow-[var(--cds-elevation-level1)]">
       <div className="relative overflow-hidden rounded-t-2xl bg-[#141518] px-4 pb-4 pt-4">
@@ -381,17 +387,17 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                 </div>
                 {challenge.outcome && (
                   <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
-                    You received the award for{' '}
-                    <strong>{challenge.outcome.awardLabel ?? 'Longest Streak'}</strong>
-                    {challenge.outcome.completedCourseCount != null &&
-                    challenge.outcome.completedCourseCount > 0 ? (
+                    {outcomeHasCourseStat ? (
                       <>
-                        {', and completed '}
-                        <strong>{challenge.outcome.completedCourseCount}</strong>{' '}
-                        {challenge.outcome.completedCourseCount === 1 ? 'course' : 'courses'}
+                        You received the award for <strong>{outcomeAwardLabel}</strong>, and completed{' '}
+                        <strong>{outcomeCourseCount}</strong>{' '}
+                        {outcomeCourseCount === 1 ? 'course' : 'courses'}.
                       </>
-                    ) : null}
-                    .
+                    ) : (
+                      <>
+                        You received the award for <strong>{outcomeAwardLabel}</strong>.
+                      </>
+                    )}
                   </p>
                 )}
                 {onOpenShareout ? (
