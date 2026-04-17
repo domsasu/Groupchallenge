@@ -469,12 +469,13 @@ export const WeeklyLearningLeaderboard: React.FC<
           >
             <div className="flex flex-wrap items-end gap-4">
               {LEADERBOARD_TABS.map((tab) => (
-                <LeaderboardTabButton
-                  key={tab.id}
-                  tab={tab}
-                  selected={activeTab === tab.id}
-                  onSelect={setActiveTab}
-                />
+                <React.Fragment key={tab.id}>
+                  <LeaderboardTabButton
+                    tab={tab}
+                    selected={activeTab === tab.id}
+                    onSelect={setActiveTab}
+                  />
+                </React.Fragment>
               ))}
             </div>
           </div>

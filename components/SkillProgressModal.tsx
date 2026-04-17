@@ -1,5 +1,5 @@
 import React from 'react';
-import * as Icons from './Icons';
+import { Icons } from './Icons';
 
 interface SubSkill {
   name: string;
@@ -54,7 +54,7 @@ export const SkillProgressModal: React.FC<SkillProgressModalProps> = ({
           onClick={onClose}
           className="absolute top-4 right-4 z-10 p-1.5 rounded-full hover:bg-[var(--cds-color-grey-50)] transition-colors"
         >
-          <Icons.X className="w-5 h-5 text-[var(--cds-color-grey-500)]" />
+          <Icons.Close className="w-5 h-5 text-[var(--cds-color-grey-500)]" />
         </button>
 
         <div className="p-6">

@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Icons } from './Icons';
 import {
   CohortId,
@@ -434,79 +435,199 @@ function HomeSidebarMiniChallenge({
   );
 }
 
-function HomeLeaderboard({
+function HomeLeaderboardContent({
   selectedCohort,
   onSelectCohort,
+  headingId,
 }: {
   selectedCohort: CohortId;
   onSelectCohort: (id: CohortId) => void;
+  headingId?: string;
 }) {
   const board = COHORT_LEADERBOARD[selectedCohort];
 
   return (
-    <div className="rounded-[var(--cds-border-radius-200)] bg-[var(--cds-color-white)] p-4 sm:p-5">
-      <div className="flex min-w-0 flex-col gap-4">
-        <div className="flex flex-col gap-3">
-          <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)]">Leaderboard</h2>
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            {COHORTS.map((cohort) => {
-              const isActive = cohort.id === selectedCohort;
-              return (
-                <button
-                  key={cohort.id}
-                  type="button"
-                  onClick={() => onSelectCohort(cohort.id)}
-                  className={`cds-body-secondary h-8 rounded-[var(--cds-border-radius-400)] px-3 py-1 transition-colors ${
-                    isActive
-                      ? 'bg-[var(--cds-color-grey-800)] text-[var(--cds-color-white)]'
-                      : 'bg-[var(--cds-color-white)] border border-[var(--cds-color-grey-100)] text-[var(--cds-color-grey-975)] hover:bg-[var(--cds-color-grey-25)]'
-                  }`}
-                >
-                  {cohort.label}{' '}
-                  <span className={isActive ? 'text-[var(--cds-color-grey-200)]' : 'text-[var(--cds-color-grey-600)]'}>
-                    {cohort.members.toLocaleString()}
-                  </span>
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--cds-color-grey-600)] transition-colors hover:bg-[var(--cds-color-grey-50)] hover:text-[var(--cds-color-grey-975)]"
-              aria-label="Join a cohort"
-            >
-              <span className="material-symbols-rounded" style={{ fontSize: 20 }}>
-                add
-              </span>
-            </button>
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex flex-col gap-3">
+        <h2
+          id={headingId}
+          className="cds-subtitle-lg text-[var(--cds-color-grey-975)]"
+        >
+          Leaderboard
+        </h2>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {COHORTS.map((cohort) => {
+            const isActive = cohort.id === selectedCohort;
+            return (
+              <button
+                key={cohort.id}
+                type="button"
+                onClick={() => onSelectCohort(cohort.id)}
+                className={`cds-body-secondary h-8 rounded-[var(--cds-border-radius-400)] px-3 py-1 transition-colors ${
+                  isActive
+                    ? 'bg-[var(--cds-color-grey-800)] text-[var(--cds-color-white)]'
+                    : 'bg-[var(--cds-color-white)] border border-[var(--cds-color-grey-100)] text-[var(--cds-color-grey-975)] hover:bg-[var(--cds-color-grey-25)]'
+                }`}
+              >
+                {cohort.label}{' '}
+                <span className={isActive ? 'text-[var(--cds-color-grey-200)]' : 'text-[var(--cds-color-grey-600)]'}>
+                  {cohort.members.toLocaleString()}
+                </span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--cds-color-grey-600)] transition-colors hover:bg-[var(--cds-color-grey-50)] hover:text-[var(--cds-color-grey-975)]"
+            aria-label="Join a cohort"
+          >
+            <span className="material-symbols-rounded" style={{ fontSize: 20 }}>
+              add
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <p className="max-w-3xl cds-body-tertiary text-[var(--cds-color-grey-600)]">
+        Rankings use total learning hours logged in the cohort you have selected. Use the cohort pills above to switch
+        boards and compare how you rank.
+      </p>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
+          <p className="cds-body-tertiary mb-1.5 text-[var(--cds-color-grey-600)]">Top 3</p>
+          <div className="space-y-1">
+            {board.top3.map((p) => (
+              <React.Fragment key={p.rank}>
+                <MiniLeaderboardRow peer={p} isUser={p.rank === board.userRank} isMedal />
+              </React.Fragment>
+            ))}
           </div>
         </div>
 
-        <p className="max-w-3xl cds-body-tertiary text-[var(--cds-color-grey-600)]">
-          Rankings use total learning hours logged in the cohort you have selected. Use the cohort pills above to switch
-          boards and compare how you rank.
-        </p>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
-            <p className="cds-body-tertiary mb-1.5 text-[var(--cds-color-grey-600)]">Top 3</p>
-            <div className="space-y-1">
-              {board.top3.map((p) => (
-                <MiniLeaderboardRow key={p.rank} peer={p} isUser={p.rank === board.userRank} isMedal />
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
-            <p className="cds-body-tertiary mb-1.5 text-[var(--cds-color-grey-600)]">Around you</p>
-            <div className="space-y-1">
-              {board.around.map((p) => (
-                <MiniLeaderboardRow key={p.rank} peer={p} isUser={p.rank === board.userRank} isMedal={false} />
-              ))}
-            </div>
+        <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
+          <p className="cds-body-tertiary mb-1.5 text-[var(--cds-color-grey-600)]">Around you</p>
+          <div className="space-y-1">
+            {board.around.map((p) => (
+              <React.Fragment key={p.rank}>
+                <MiniLeaderboardRow peer={p} isUser={p.rank === board.userRank} isMedal={false} />
+              </React.Fragment>
+            ))}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function HomeLeaderboardMiniWidget({
+  selectedCohort,
+  onOpen,
+}: {
+  selectedCohort: CohortId;
+  onOpen: () => void;
+}) {
+  const cohort = COHORTS.find((c) => c.id === selectedCohort);
+  const board = COHORT_LEADERBOARD[selectedCohort];
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-4 text-left shadow-[var(--cds-elevation-level1)] transition hover:border-[var(--cds-color-grey-200)] hover:shadow-[var(--cds-elevation-level2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
+      aria-haspopup="dialog"
+      aria-label={
+        cohort
+          ? `Open leaderboard, ${cohort.label}, your rank ${board.userRank} out of ${cohort.members.toLocaleString()}`
+          : 'Open leaderboard'
+      }
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <h3 className="cds-subtitle-sm text-[var(--cds-color-grey-975)]">Leaderboard</h3>
+        <span className="cds-body-secondary max-w-[55%] min-w-0 shrink-0 truncate text-right text-[var(--cds-color-grey-600)]">
+          {cohort?.label ?? selectedCohort}
+        </span>
+      </div>
+      <p className="cds-body-tertiary mb-2 text-[var(--cds-color-grey-600)]">
+        {cohort
+          ? `Your rank ${board.userRank} out of ${cohort.members.toLocaleString()}`
+          : `Your rank ${board.userRank} out of —`}
+      </p>
+      <div className="min-w-0">
+        <div className="space-y-0">
+          {board.around.map((p) => (
+            <React.Fragment key={p.rank}>
+              <MiniLeaderboardRow
+                peer={p}
+                isUser={p.rank === board.userRank}
+                isMedal={false}
+                compact
+              />
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function HomeLeaderboardModal({
+  isOpen,
+  onClose,
+  selectedCohort,
+  onSelectCohort,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  selectedCohort: CohortId;
+  onSelectCohort: (id: CohortId) => void;
+}) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
+      <div
+        className="modal-backdrop absolute inset-0"
+        onClick={onClose}
+        aria-hidden
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="home-leaderboard-modal-title"
+        className="relative z-[var(--z-modal)] w-full max-w-[720px] max-h-[min(90vh,880px)] overflow-y-auto rounded-[var(--cds-border-radius-200)] bg-[var(--cds-color-white)] p-4 shadow-[var(--cds-elevation-level3)] sm:p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-[var(--cds-color-grey-600)] transition-colors hover:bg-[var(--cds-color-grey-50)] hover:text-[var(--cds-color-grey-975)]"
+          aria-label="Close leaderboard"
+        >
+          <Icons.Close className="h-5 w-5" />
+        </button>
+        <HomeLeaderboardContent
+          selectedCohort={selectedCohort}
+          onSelectCohort={onSelectCohort}
+          headingId="home-leaderboard-modal-title"
+        />
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -539,6 +660,7 @@ export const Home: React.FC<HomeProps> = ({
 
   const [selectedChip, setSelectedChip] = useState('chip1');
   const [selectedCohort, setSelectedCohort] = useState<CohortId>('workingparents');
+  const [leaderboardModalOpen, setLeaderboardModalOpen] = useState(false);
 
   /** Merged with Community tab enrollment (localStorage) so progress/join state stays in sync. */
   const mergedCommunityChallenges = mergeCommunityChallengesWithStorage(MOCK_COMMUNITY_CHALLENGES);
@@ -715,31 +837,22 @@ export const Home: React.FC<HomeProps> = ({
   return (
     <div className="flex-1 bg-[var(--cds-color-white)] overflow-y-auto custom-scrollbar">
       
-      {/* Hero Banner - theme from course (blue default, yellow for Sensory); `surface.*` scopes per site variant */}
-      <div
-        className={`relative ${courseData.theme === 'yellow' ? 'bg-[var(--cds-color-yellow-25)]' : 'bg-[var(--cds-color-emphasis-primary-bg-weak)]'} ${surface.homeHeroExtraClassName}`}
-        data-site-variant={variant}
-      >
-        {/* Background pattern: Yellow BG for Sensory course, else BG image C */}
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-no-repeat bg-[right_top] bg-[length:min(85%,900px)_auto] opacity-[0.55] pointer-events-none"
-          style={{ backgroundImage: `url("${courseData.theme === 'yellow' ? '/course2/Yellow BG.png' : '/BG image C.png'}")` }}
-        />
-        <div className="relative z-10 max-w-[1440px] mx-auto px-6 py-8">
+      {/* Hero Banner — `surface.*` scopes per site variant */}
+      <div className={`relative ${surface.homeHeroExtraClassName}`} data-site-variant={variant}>
+        <div className="relative max-w-[1440px] mx-auto px-6 pt-8">
           {enrolledCoursesLoading ? (
             /* Skeleton: header bar + main card + sidebar */
             <>
-              <div className="mb-2">
-                <div className="min-w-0 space-y-3">
-                  <div className="h-5 w-48 bg-[var(--cds-color-grey-100)] rounded animate-pulse" />
-                  <div className="h-6 w-64 bg-[var(--cds-color-grey-100)] rounded animate-pulse" />
-                  <div className="h-4 w-32 bg-[var(--cds-color-grey-100)] rounded animate-pulse mt-3" />
-                  <div className="h-2 max-w-[395px] bg-[var(--cds-color-grey-100)] rounded-full animate-pulse" />
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-start">
+                <div className="lg:col-span-9 min-w-0 space-y-6">
+                  <div className="min-w-0 space-y-3">
+                    <div className="h-5 w-48 bg-[var(--cds-color-grey-100)] rounded animate-pulse" />
+                    <div className="h-6 w-64 bg-[var(--cds-color-grey-100)] rounded animate-pulse" />
+                    <div className="h-4 w-32 bg-[var(--cds-color-grey-100)] rounded animate-pulse mt-3" />
+                    <div className="h-2 max-w-[395px] bg-[var(--cds-color-grey-100)] rounded-full animate-pulse" />
+                  </div>
+                  <div className="h-[320px] min-h-[300px] bg-[var(--cds-color-grey-100)] rounded-xl animate-pulse" />
                 </div>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-                <div className="lg:col-span-9 h-[320px] min-h-[300px] bg-[var(--cds-color-grey-100)] rounded-xl animate-pulse" />
                 <div className="lg:col-span-3 space-y-3">
                   <div className="h-[140px] bg-[var(--cds-color-grey-100)] rounded-xl animate-pulse" />
                   <div className="h-[180px] bg-[var(--cds-color-grey-100)] rounded-xl animate-pulse" />
@@ -748,8 +861,11 @@ export const Home: React.FC<HomeProps> = ({
             </>
           ) : (
           <>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-start">
+            {/* Left: welcome + course card — sidebar column aligns to top of welcome */}
+            <div className="lg:col-span-9 min-w-0 space-y-6">
           {/* Learning preview section */}
-          <div className="mb-2">
+          <div>
             <div className="min-w-0 flex flex-col items-start text-left">
               <p className="cds-body-primary text-[var(--cds-color-grey-975)] mb-[4pt]">
                 Priya, welcome back to your {courseData.isSpecialization ? (
@@ -785,11 +901,9 @@ export const Home: React.FC<HomeProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-            
-            {/* Left: Course Card - slides up from below into position */}
-            <div className="lg:col-span-9 min-w-0 animate-widget-slide-up self-start">
-              <div className="bg-[var(--cds-color-white)] rounded-[var(--cds-border-radius-200)] min-h-[300px] flex flex-col relative overflow-visible">
+            {/* Course Card - slides up from below into position */}
+            <div className="min-w-0 animate-widget-slide-up self-start">
+              <div className="bg-[var(--cds-color-white)] rounded-[var(--cds-border-radius-200)] min-h-[300px] flex flex-col relative overflow-visible border border-[var(--cds-color-grey-100)] shadow-[var(--cds-elevation-level1)] transition hover:border-[var(--cds-color-grey-200)] hover:shadow-[var(--cds-elevation-level2)]">
                 {/* Background SVG - Cropped on right side */}
                 <div className="absolute right-0 top-0 bottom-0 w-[50%] overflow-hidden pointer-events-none">
                   <img 
@@ -938,12 +1052,13 @@ export const Home: React.FC<HomeProps> = ({
                 </div>
               </div>
             </div>
+          </div>
 
             {/* Right Sidebar: slides up from below after left */}
             <div className="lg:col-span-3 space-y-3 min-w-0 animate-widget-slide-up-delay">
               
               {/* Today's Goal Widget */}
-              <div className="bg-[var(--cds-color-white)] rounded-[var(--cds-border-radius-200)] p-4">
+              <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-4 shadow-[var(--cds-elevation-level1)] transition hover:border-[var(--cds-color-grey-200)] hover:shadow-[var(--cds-elevation-level2)]">
                 <h3 className="cds-subtitle-sm text-[var(--cds-color-grey-975)] mb-2">Today&apos;s goals</h3>
 
                 <div className="flex flex-col">
@@ -959,7 +1074,7 @@ export const Home: React.FC<HomeProps> = ({
               </div>
 
               {/* Weekly Streaks */}
-              <div className="bg-[var(--cds-color-white)] rounded-[var(--cds-border-radius-200)] p-4">
+              <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-4 shadow-[var(--cds-elevation-level1)] transition hover:border-[var(--cds-color-grey-200)] hover:shadow-[var(--cds-elevation-level2)]">
                 <h3 className="cds-subtitle-sm text-[var(--cds-color-grey-975)] mb-2">1 week streak</h3>
 
                 <div className="flex gap-2 mb-1">
@@ -1040,6 +1155,10 @@ export const Home: React.FC<HomeProps> = ({
                 ))}
               </div>
 
+              <HomeLeaderboardMiniWidget
+                selectedCohort={selectedCohort}
+                onOpen={() => setLeaderboardModalOpen(true)}
+              />
             </div>
 
           </div>
@@ -1048,10 +1167,15 @@ export const Home: React.FC<HomeProps> = ({
         </div>
       </div>
 
+      <HomeLeaderboardModal
+        isOpen={leaderboardModalOpen}
+        onClose={() => setLeaderboardModalOpen(false)}
+        selectedCohort={selectedCohort}
+        onSelectCohort={setSelectedCohort}
+      />
+
       {/* White Content Area */}
       <div className="max-w-[1440px] mx-auto px-6 py-10 space-y-12">
-
-        <HomeLeaderboard selectedCohort={selectedCohort} onSelectCohort={setSelectedCohort} />
 
         {/* Course Recommendations - loads in after top section */}
         <div className="animate-widget-slide-up-content">
@@ -1067,7 +1191,9 @@ export const Home: React.FC<HomeProps> = ({
 
           <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
             {recommendedCourses.map((course) => (
-              <RecommendedCourseCard key={course.id} course={course} />
+              <React.Fragment key={course.id}>
+                <RecommendedCourseCard course={course} />
+              </React.Fragment>
             ))}
           </div>
 
