@@ -8,6 +8,7 @@ import {
   type CommunityChallenge,
 } from '../../constants/communityChallenges';
 import {
+  markChallengeJoinedViaFlow,
   mergeCommunityChallengesWithStorage,
   persistChallengesFromMock,
 } from '../../constants/communityChallengesPersistence';
@@ -124,6 +125,7 @@ export const ChallengesView: React.FC = () => {
   }, []);
 
   const completeJoinChallenge = useCallback((id: string, groupIndex: number) => {
+    markChallengeJoinedViaFlow(id);
     setChallenges((prev) =>
       prev.map((c) => {
         if (c.id !== id) return c;

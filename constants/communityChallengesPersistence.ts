@@ -1,7 +1,13 @@
 import { MOCK_COMMUNITY_CHALLENGES, type CommunityChallenge } from './communityChallenges';
 
 /** Bump version to reset persisted enrollment to mock defaults (e.g. after join-flow behavior changes). */
-const STORAGE_KEY = 'groupchallenge.communityChallenges.v5';
+const STORAGE_KEY = 'groupchallenge.communityChallenges.v6';
+
+/**
+ * Set only when the learner finishes the multi-step Community join modal (`completeJoinChallenge`).
+ * Vibe “joined” / Home widget must not rely on `optedIn` in STORAGE_KEY alone (legacy could show joined after refresh).
+ */
+const JOIN_FLOW_COMPLETED_KEY = 'groupchallenge.joinFlowCompleted.v1';
 
 /** Stable id for “It’s a Vibe” (used by tests / deep links). */
 export const VIBE_CHALLENGE_ID = 'ch-active-ai-vibe-coding' as const;
@@ -34,10 +40,49 @@ function writeOverrides(map: ChallengeOverridesMap): void {
   }
 }
 
+function readJoinFlowCompleted(): Record<string, true> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(JOIN_FLOW_COMPLETED_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return parsed as Record<string, true>;
+  } catch {
+    return {};
+  }
+}
+
+/** Call when the learner completes the join modal so “joined” / Home streak widget can appear after refresh. */
+export function markChallengeJoinedViaFlow(challengeId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const prev = readJoinFlowCompleted();
+    if (prev[challengeId]) return;
+    const next = { ...prev, [challengeId]: true as const };
+    window.localStorage.setItem(JOIN_FLOW_COMPLETED_KEY, JSON.stringify(next));
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
 /** Merge mock challenges with enrollment saved from Community → Challenges (join flow). */
 export function mergeCommunityChallengesWithStorage(base: CommunityChallenge[]): CommunityChallenge[] {
   const overrides = readOverrides();
+  const joinDone = readJoinFlowCompleted();
   return base.map((c) => {
+    if (c.id === VIBE_CHALLENGE_ID) {
+      const completed = joinDone[VIBE_CHALLENGE_ID] === true;
+      if (!completed) {
+        return { ...c };
+      }
+      const o = overrides[c.id];
+      return {
+        ...c,
+        ...(o ?? {}),
+        optedIn: true,
+      };
+    }
     const o = overrides[c.id];
     if (!o) return c;
     return {

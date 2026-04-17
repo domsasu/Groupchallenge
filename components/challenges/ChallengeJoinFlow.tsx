@@ -202,7 +202,7 @@ export const ChallengeJoinFlow: React.FC<ChallengeJoinFlowProps> = ({ challenge,
             )}
             {challenge.id === 'ch-active-ai-vibe-coding' && (
               <EnrolledCourseMiniCard
-                callout="Already enrolled in vibe coding"
+                callout="Suggested course for vibe coding"
                 imageSrc={VIBE_ENROLLED_COURSE.imageSrc}
                 provider={VIBE_ENROLLED_COURSE.provider}
                 title={VIBE_ENROLLED_COURSE.title}
