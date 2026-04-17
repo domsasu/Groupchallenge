@@ -255,9 +255,9 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
       : `${Math.round(Math.min(1, Math.max(0, challenge.cardProgress)) * 100)}%`;
   const tierGroupsLayout = resolveGroupsAtTierColumns(challenge) ?? challenge.groupsAtMilestoneTier;
   const learnerGroupSquad = groupSquadForChallenge(challenge, challenge.groupIndex);
-  /** Opted-out learners see all teams expanded; opted-in uses hover to expand (saves vertical space). */
+  /** Squad stacks stay collapsed until hover on the progress card (pre- and post-join). */
   const [teamRankingsOpen, setTeamRankingsOpen] = useState(false);
-  const teamsReveal = !optedIn || teamRankingsOpen;
+  const teamsReveal = teamRankingsOpen;
 
   useEffect(() => {
     setTeamRankingsOpen(false);

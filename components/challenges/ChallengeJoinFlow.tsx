@@ -1,10 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import type { CommunityChallenge } from '../../constants/communityChallenges';
-import {
-  formatProgressGoalTotalLabel,
-  parseChallengeGoalTotalUnits,
-} from '../../constants/communityChallenges';
+import { VIBE_ENROLLED_COURSE } from '../../constants/joinFlowEnrolledCourse';
 import { groupSquadForChallenge } from '../../constants/challengeSquads';
+import { EnrolledCourseMiniCard } from './EnrolledCourseMiniCard';
 import { CHALLENGE_TIER_ART_SRC } from '../../constants/challengeTierVisuals';
 import { FEED_COHORT_META } from '../../constants/feedCohorts';
 
@@ -21,32 +19,6 @@ function parseChallengeLocalDate(isoDate: string): Date {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
   if (!m) return new Date(isoDate);
   return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-}
-
-function contributionHintLine(challenge: CommunityChallenge): string | null {
-  const total = parseChallengeGoalTotalUnits(challenge);
-  const n = challenge.approxGroupSize;
-  if (total == null || !Number.isFinite(total) || n <= 0) return null;
-  const per = Math.max(1, Math.round(total / n));
-  const last = challenge.milestones[challenge.milestones.length - 1]?.target?.toLowerCase() ?? '';
-  if (/\bmodules?\b/.test(last)) {
-    return `Aim for roughly ${per} modules of progress toward the group goal—your share of the work alongside teammates.`;
-  }
-  if (/\bcourses?\b/.test(last)) {
-    return `Aim for roughly ${per} courses toward the group goal—your share of the work alongside teammates.`;
-  }
-  if (/\blessons?\b/.test(last)) {
-    return `Aim for roughly ${per} lessons toward the group goal—your share of the work alongside teammates.`;
-  }
-  return `Aim for roughly ${per} units toward the group goal—your share of the work alongside teammates.`;
-}
-
-function groupGoalLine(challenge: CommunityChallenge): string {
-  const label = formatProgressGoalTotalLabel(challenge);
-  if (label) {
-    return `Your squad will work together to reach the challenge goal: ${label} total for the group.`;
-  }
-  return 'Your squad will work together to reach the challenge goal set for this cohort.';
 }
 
 /**
@@ -111,7 +83,6 @@ export const ChallengeJoinFlow: React.FC<ChallengeJoinFlowProps> = ({ challenge,
   }, [targetGroupIndex, onComplete, onClose]);
 
   const tips = challenge.steps.slice(0, 3);
-  const contributionLine = contributionHintLine(challenge);
   const assignSquad = groupSquadForChallenge(challenge, cycleDisplayIndex);
 
   return (
@@ -219,15 +190,8 @@ export const ChallengeJoinFlow: React.FC<ChallengeJoinFlowProps> = ({ challenge,
                 {groupSquadForChallenge(challenge, targetGroupIndex).label}
               </div>
             </div>
-            <div className="mt-6 space-y-3 rounded-xl border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] p-4 text-left">
-              <h3 className="text-sm font-semibold text-[var(--cds-color-grey-975)]">Group goal</h3>
-              <p className="cds-body-secondary text-[var(--cds-color-grey-800)]">{groupGoalLine(challenge)}</p>
-              {contributionLine && (
-                <p className="cds-body-secondary text-[var(--cds-color-grey-800)]">{contributionLine}</p>
-              )}
-            </div>
             {tips.length > 0 && (
-              <div className="mt-4">
+              <div className="mt-6">
                 <h3 className="text-sm font-semibold text-[var(--cds-color-grey-975)]">Ways to get started</h3>
                 <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-[var(--cds-color-grey-700)]">
                   {tips.map((s, i) => (
@@ -236,25 +200,26 @@ export const ChallengeJoinFlow: React.FC<ChallengeJoinFlowProps> = ({ challenge,
                 </ul>
               </div>
             )}
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            {challenge.id === 'ch-active-ai-vibe-coding' && (
+              <EnrolledCourseMiniCard
+                callout="Already enrolled in vibe coding"
+                imageSrc={VIBE_ENROLLED_COURSE.imageSrc}
+                provider={VIBE_ENROLLED_COURSE.provider}
+                title={VIBE_ENROLLED_COURSE.title}
+                type={VIBE_ENROLLED_COURSE.type}
+                rating={VIBE_ENROLLED_COURSE.rating}
+                href={VIBE_ENROLLED_COURSE.href}
+              />
+            )}
+            <div className="mt-6 flex justify-end">
               <button
                 type="button"
                 onClick={() => {
                   finishJoin();
                 }}
-                className="order-2 rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] px-4 py-2.5 text-sm font-semibold text-[var(--cds-color-grey-975)] shadow-sm hover:bg-[var(--cds-color-grey-25)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)] sm:order-1"
+                className="rounded-[var(--cds-border-radius-100)] border-0 bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--cds-color-blue-700)] transition-colors hover:bg-[var(--cds-color-grey-25)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
               >
-                Challenge details
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  finishJoin();
-                  window.alert('Opening courses for this challenge (preview).');
-                }}
-                className="order-1 rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--cds-color-blue-800)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)] sm:order-2"
-              >
-                View courses
+                View challenge details
               </button>
             </div>
           </div>
