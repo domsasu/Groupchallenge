@@ -27,10 +27,7 @@ import {
   MOCK_COMMUNITY_CHALLENGES,
   type CommunityChallenge,
 } from '../constants/communityChallenges';
-import {
-  mergeCommunityChallengesWithStorage,
-  VIBE_CHALLENGE_ID,
-} from '../constants/communityChallengesPersistence';
+import { mergeCommunityChallengesWithStorage } from '../constants/communityChallengesPersistence';
 import { CHALLENGE_TIER_ART_SRC } from '../constants/challengeTierVisuals';
 import type { CommunitySurface } from './FeedPage';
 
@@ -516,6 +513,9 @@ function HomeLeaderboard({
 /** When true, shows the cohort’s active/upcoming challenge (e.g. Working Parents) under Weekly streaks. */
 const SHOW_HOME_COHORT_SIDEBAR_CHALLENGE = false;
 
+/** Hide Working Parents “nap time” cohort card under streaks; show joined challenges via `joinedActiveHomeSidebarChallenges` instead. */
+const HOME_SIDEBAR_EXCLUDED_CHALLENGE_ID = 'ch-active-workingparents-nap-module';
+
 export const Home: React.FC<HomeProps> = ({ 
     onResume, 
     currentSP, 
@@ -547,9 +547,13 @@ export const Home: React.FC<HomeProps> = ({
   const sidebarHomeChallenge =
     cohortList.find((c) => c.lifecycle === 'active') ?? cohortList.find((c) => c.lifecycle === 'upcoming') ?? null;
 
-  /** Second card: “It’s a Vibe” after joining from Community → Challenges. */
-  const vibeSidebarChallenge =
-    mergedCommunityChallenges.find((c) => c.id === VIBE_CHALLENGE_ID && c.optedIn) ?? null;
+  /** Mini challenge cards under streaks: any active challenge the learner joined (Community tab state), except the Working Parents nap-module card. */
+  const joinedActiveHomeSidebarChallenges = mergedCommunityChallenges.filter(
+    (c) =>
+      c.optedIn &&
+      c.lifecycle === 'active' &&
+      c.id !== HOME_SIDEBAR_EXCLUDED_CHALLENGE_ID
+  );
 
   // Intro video: muted by default, end state for "Continue watching"
   const [introVideoMuted, setIntroVideoMuted] = useState(true);
@@ -1003,35 +1007,37 @@ export const Home: React.FC<HomeProps> = ({
                     )}
                   </div>
                 )}
-                {vibeSidebarChallenge &&
-                  (!SHOW_HOME_COHORT_SIDEBAR_CHALLENGE || sidebarHomeChallenge?.id !== vibeSidebarChallenge.id) && (
-                  <div className="mt-3 border-t border-[var(--cds-color-grey-100)] pt-3">
+                {joinedActiveHomeSidebarChallenges.map((challenge) => (
+                  <div
+                    key={challenge.id}
+                    className="mt-3 border-t border-[var(--cds-color-grey-100)] pt-3"
+                  >
                     {onNavigateToFeed ? (
                       <button
                         type="button"
                         onClick={() =>
                           onNavigateToFeed({
                             tab: 'challenges',
-                            cohortId: 'ai',
+                            cohortId: challenge.cohortId,
                           })
                         }
                         className="w-full rounded-[var(--cds-border-radius-100)] border border-transparent bg-[var(--cds-color-grey-25)] p-3 text-left transition hover:border-[var(--cds-color-blue-700)] hover:bg-[var(--cds-color-white)] focus-visible:border-[var(--cds-color-blue-700)]"
                       >
                         <HomeSidebarMiniChallenge
-                          challenge={vibeSidebarChallenge}
-                          cohortPill={FEED_COHORT_META[vibeSidebarChallenge.cohortId].pillLabel}
+                          challenge={challenge}
+                          cohortPill={FEED_COHORT_META[challenge.cohortId].pillLabel}
                         />
                       </button>
                     ) : (
                       <div className="rounded-[var(--cds-border-radius-100)] border border-transparent bg-[var(--cds-color-grey-25)] p-3">
                         <HomeSidebarMiniChallenge
-                          challenge={vibeSidebarChallenge}
-                          cohortPill={FEED_COHORT_META[vibeSidebarChallenge.cohortId].pillLabel}
+                          challenge={challenge}
+                          cohortPill={FEED_COHORT_META[challenge.cohortId].pillLabel}
                         />
                       </div>
                     )}
                   </div>
-                )}
+                ))}
               </div>
 
             </div>

@@ -1,9 +1,9 @@
 import { MOCK_COMMUNITY_CHALLENGES, type CommunityChallenge } from './communityChallenges';
 
 /** Bump version to reset persisted enrollment to mock defaults (e.g. after join-flow behavior changes). */
-const STORAGE_KEY = 'groupchallenge.communityChallenges.v4';
+const STORAGE_KEY = 'groupchallenge.communityChallenges.v5';
 
-/** Preview challenge: do not persist enrollment — avoids “always Joined” after localStorage + hot reload during dev. */
+/** Stable id for “It’s a Vibe” (used by tests / deep links). */
 export const VIBE_CHALLENGE_ID = 'ch-active-ai-vibe-coding' as const;
 
 export type StoredChallengeFields = Pick<
@@ -38,7 +38,6 @@ function writeOverrides(map: ChallengeOverridesMap): void {
 export function mergeCommunityChallengesWithStorage(base: CommunityChallenge[]): CommunityChallenge[] {
   const overrides = readOverrides();
   return base.map((c) => {
-    if (c.id === VIBE_CHALLENGE_ID) return c;
     const o = overrides[c.id];
     if (!o) return c;
     return {
@@ -53,7 +52,6 @@ export function persistChallengesFromMock(current: CommunityChallenge[]): void {
   const mockById = new Map(MOCK_COMMUNITY_CHALLENGES.map((c) => [c.id, c]));
   const next: ChallengeOverridesMap = {};
   for (const c of current) {
-    if (c.id === VIBE_CHALLENGE_ID) continue;
     const m = mockById.get(c.id);
     if (!m) continue;
     const patch: Partial<StoredChallengeFields> = {};
