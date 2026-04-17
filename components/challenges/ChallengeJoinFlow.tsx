@@ -59,8 +59,8 @@ export const ChallengeJoinFlow: React.FC<ChallengeJoinFlowProps> = ({ challenge,
 
   const [step, setStep] = useState<Step>('intro');
   const [cycleDisplayIndex, setCycleDisplayIndex] = useState(1);
-  /** Squad is chosen in parent when the flow opens; animation lands on this index. */
-  const targetGroupIndex = challenge.groupIndex;
+  /** Rolled when this dialog mounts — parent does not opt in until `onComplete` runs. */
+  const [targetGroupIndex] = useState(() => Math.floor(Math.random() * challenge.groupCount) + 1);
 
   const startDateLabel = isUpcoming
     ? parseChallengeLocalDate(challenge.startsAt).toLocaleDateString(undefined, {

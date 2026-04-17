@@ -1,6 +1,5 @@
 import React from 'react';
 import type { FeedCohortId } from '../../constants/feedCohorts';
-import { FEED_COHORT_META } from '../../constants/feedCohorts';
 
 export interface SuggestChallengeStripCardProps {
   cohortId: FeedCohortId;
@@ -17,9 +16,7 @@ export const SuggestChallengeStripCard: React.FC<SuggestChallengeStripCardProps>
   isSelected,
   onSelect,
 }) => {
-  const meta = FEED_COHORT_META[cohortId];
-  const pillForSuggest = cohortId === 'workingparents' ? '#workingparent' : meta.pillLabel;
-  const headline = `Add a challenge for ${pillForSuggest}`;
+  const headline = 'Add a challenge';
 
   return (
     <button

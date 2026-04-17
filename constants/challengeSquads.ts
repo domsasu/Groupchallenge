@@ -89,33 +89,98 @@ export function aiColorPlanetLabel(challengeId: string, groupNumber: number): st
   return `${c} ${p}`;
 }
 
-/** Six visual presets (cycled) so AI squads stay colorful while labels vary. */
-const AI_THEME_ROTATION: { muted: string; active: string }[] = [
-  {
-    muted: 'border-red-200 bg-red-50 text-red-950',
-    active: 'border-red-500 bg-red-100 text-red-950 shadow-sm ring-2 ring-red-400/40',
-  },
-  {
-    muted: 'border-sky-200 bg-sky-50 text-sky-950',
-    active: 'border-sky-500 bg-sky-100 text-sky-950 shadow-sm ring-2 ring-sky-400/40',
-  },
-  {
-    muted: 'border-amber-200 bg-amber-50 text-amber-950',
+/**
+ * “It’s a Vibe” — fixed squad names + pill colors that match the leading color word.
+ * (Group progress toward 100h is driven separately in `communityChallenges`.)
+ */
+const VIBE_CHALLENGE_FIXED_SQUADS: Record<
+  number,
+  { label: string; muted: string; active: string }
+> = {
+  1: {
+    label: 'Gold Saturn',
+    muted: 'border-amber-300 bg-amber-50 text-amber-950',
     active: 'border-amber-500 bg-amber-100 text-amber-950 shadow-sm ring-2 ring-amber-400/40',
   },
-  {
-    muted: 'border-emerald-200 bg-emerald-50 text-emerald-950',
-    active: 'border-emerald-500 bg-emerald-100 text-emerald-950 shadow-sm ring-2 ring-emerald-400/40',
+  2: {
+    label: 'Jade Mercury',
+    muted: 'border-teal-300 bg-teal-50 text-teal-950',
+    active: 'border-teal-500 bg-teal-100 text-teal-950 shadow-sm ring-2 ring-teal-400/40',
   },
-  {
-    muted: 'border-violet-200 bg-violet-50 text-violet-950',
-    active: 'border-violet-500 bg-violet-100 text-violet-950 shadow-sm ring-2 ring-violet-400/40',
-  },
-  {
+  3: {
+    label: 'Rose Europa',
     muted: 'border-rose-300 bg-rose-50 text-rose-950',
     active: 'border-rose-500 bg-rose-100 text-rose-950 shadow-sm ring-2 ring-rose-400/40',
   },
+  4: {
+    label: 'Azure Mars',
+    muted: 'border-sky-300 bg-sky-50 text-sky-950',
+    active: 'border-sky-500 bg-sky-100 text-sky-950 shadow-sm ring-2 ring-sky-400/40',
+  },
+};
+
+/** Pill styles keyed by the first word of `aiColorPlanetLabel` — matches name, not a separate hash. */
+const AI_COLOR_WORD_THEMES: Record<string, { muted: string; active: string }> = {
+  Crimson: {
+    muted: 'border-red-200 bg-red-50 text-red-950',
+    active: 'border-red-500 bg-red-100 text-red-950 shadow-sm ring-2 ring-red-400/40',
+  },
+  Azure: {
+    muted: 'border-sky-200 bg-sky-50 text-sky-950',
+    active: 'border-sky-500 bg-sky-100 text-sky-950 shadow-sm ring-2 ring-sky-400/40',
+  },
+  Violet: {
+    muted: 'border-violet-200 bg-violet-50 text-violet-950',
+    active: 'border-violet-500 bg-violet-100 text-violet-950 shadow-sm ring-2 ring-violet-400/40',
+  },
+  Emerald: {
+    muted: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+    active: 'border-emerald-500 bg-emerald-100 text-emerald-950 shadow-sm ring-2 ring-emerald-400/40',
+  },
+  Gold: {
+    muted: 'border-amber-300 bg-amber-50 text-amber-950',
+    active: 'border-amber-500 bg-amber-100 text-amber-950 shadow-sm ring-2 ring-amber-400/40',
+  },
+  Rose: {
+    muted: 'border-rose-300 bg-rose-50 text-rose-950',
+    active: 'border-rose-500 bg-rose-100 text-rose-950 shadow-sm ring-2 ring-rose-400/40',
+  },
+  Cobalt: {
+    muted: 'border-blue-200 bg-blue-50 text-blue-950',
+    active: 'border-blue-600 bg-blue-100 text-blue-950 shadow-sm ring-2 ring-blue-400/40',
+  },
+  Amber: {
+    muted: 'border-amber-200 bg-amber-50 text-amber-950',
+    active: 'border-amber-500 bg-amber-100 text-amber-950 shadow-sm ring-2 ring-amber-400/40',
+  },
+  Jade: {
+    muted: 'border-teal-200 bg-teal-50 text-teal-950',
+    active: 'border-teal-500 bg-teal-100 text-teal-950 shadow-sm ring-2 ring-teal-400/40',
+  },
+  Sapphire: {
+    muted: 'border-indigo-200 bg-indigo-50 text-indigo-950',
+    active: 'border-indigo-500 bg-indigo-100 text-indigo-950 shadow-sm ring-2 ring-indigo-400/40',
+  },
+};
+
+/** Fallback when label shape changes — keep rotation as last resort. */
+const AI_THEME_ROTATION: { muted: string; active: string }[] = [
+  AI_COLOR_WORD_THEMES.Crimson,
+  AI_COLOR_WORD_THEMES.Azure,
+  AI_COLOR_WORD_THEMES.Gold,
+  AI_COLOR_WORD_THEMES.Emerald,
+  AI_COLOR_WORD_THEMES.Violet,
+  AI_COLOR_WORD_THEMES.Rose,
 ];
+
+function themeForAiSquadLabel(label: string): { muted: string; active: string } {
+  const first = label.trim().split(/\s+/)[0];
+  if (first && AI_COLOR_WORD_THEMES[first]) {
+    return AI_COLOR_WORD_THEMES[first];
+  }
+  const h = stableHash([label, 'ai-squad-theme-fallback']);
+  return AI_THEME_ROTATION[h % AI_THEME_ROTATION.length];
+}
 
 /**
  * Squad label + pill styles for a group. **#AIpowered** cohort uses stable pseudo-random “Color + Planet” names.
@@ -126,9 +191,12 @@ export function groupSquadForChallenge(challenge: CommunityChallenge, g: number)
   active: string;
 } {
   if (challenge.cohortId === 'ai') {
+    if (challenge.id === 'ch-active-ai-vibe-coding') {
+      const fixed = VIBE_CHALLENGE_FIXED_SQUADS[g];
+      if (fixed) return fixed;
+    }
     const label = aiColorPlanetLabel(challenge.id, g);
-    const h = stableHash([challenge.id, String(g), 'ai-squad-theme']);
-    const theme = AI_THEME_ROTATION[h % AI_THEME_ROTATION.length];
+    const theme = themeForAiSquadLabel(label);
     return { label, muted: theme.muted, active: theme.active };
   }
   return groupSquadForIndex(g);

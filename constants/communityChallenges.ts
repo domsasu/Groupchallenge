@@ -105,9 +105,9 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
       { id: 'm4', label: 'Diamond', target: '100 modules' },
     ],
     steps: [
+      'Aim to complete 5 modules by doing 30–60 min a day.',
       'Carve focused time during naps or after bedtime—protect those windows on your calendar.',
       'Use daycare, school, or when a partner has the kids to knock out a module or two.',
-      'Aim for 30–60 minutes most days; short sessions still move the needle toward 100 modules.',
     ],
     startsAt: '2026-04-15',
     endsAt: '2026-04-22',
@@ -119,10 +119,10 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
      * completed modules (0–24 → Silver col, 25–49 → Gold, 50–74 → Platinum, 75–99 → Diamond).
      */
     groupsAtMilestoneTier: [
-      [],
       [2],
       [1, 5],
       [3, 4],
+      [],
     ],
     visualTier: 'gold',
     /** Learner squad (Amber Foxes): 78/100 modules — strip + ChallengeFullDetail progress. */
@@ -151,26 +151,37 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     groupPlace: 1,
     approxGroupSize: 180,
     whyJoin:
-      '#AIpowered cohort knows that vibe coding with AI is the future of design. Work alongside your group to complete by posting courses on your skills and share out your learnings with your crew!',
+      'The #AIpowered cohort knows vibe coding is the future of design. Work alongside your team to be the first to log 100 hours of vibe coding courses.',
     milestones: [
-      { id: 'v1', label: 'First vibe', target: '1 course' },
-      { id: 'v2', label: 'Building', target: '2 courses' },
-      { id: 'v3', label: 'Complete', target: '3 courses' },
+      { id: 'v1', label: 'Quarter century', target: '25 hrs' },
+      { id: 'v2', label: 'Halfway', target: '50 hrs' },
+      { id: 'v3', label: 'Full send', target: '100 hrs' },
     ],
     steps: [
-      'Start with a one-line goal in plain language, then ask the AI for the smallest possible step—keep scope tiny so you can see what it got right or wrong before you add complexity.',
-      'In class, compare outputs with a partner: read the AI’s answer out loud, name one thing you’d keep and one you’d change, then revise your prompt together before moving on.',
-      'Pause after each iteration and jot a sentence on what you learned about how the model behaves—early on, noticing patterns beats shipping fast.',
+      'Your contribution goal: ~10 hours of vibe coding over the next 2 weeks toward the squad’s 100-hour target.',
+      'Check out Scrimba courses for easy to follow vibe coding courses.',
+      'Apply your knowledge to reinforce learnings; use Claude Code, Cursor, or AI Studio.',
     ],
     startsAt: '2026-04-03',
-    endsAt: '2026-04-27',
-    daysLeft: 12,
+    endsAt: '2026-05-15',
+    daysLeft: 30,
     optedIn: false,
     currentTierIndex: 0,
-    /** Team rankings: all squads shown under the first milestone (1 course); none at 2–3 courses yet. */
+    /**
+     * Before joining, all squads sit at the first milestone (25h); per-group hours:
+     * Gold Saturn 10h, Jade Mercury 5h, Rose Europa 5h, Azure Mars 2h.
+     */
     groupsAtMilestoneTier: [[1, 2, 3, 4], [], []],
+    /** Progress toward 100h goal (0–1): 10, 5, 5, 2 hours → tier column under 25h cap. */
+    groupProgressTowardGoal: {
+      1: 0.1,
+      2: 0.05,
+      3: 0.05,
+      4: 0.02,
+    },
     visualTier: 'platinum',
-    cardProgress: 0.55,
+    /** Strip progress before the learner opts in (no personal hours yet). */
+    cardProgress: 0,
     cardHeroImageSrc: '/challenges/vibe-coding-challenge.svg',
   },
   {

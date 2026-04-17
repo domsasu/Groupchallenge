@@ -27,6 +27,10 @@ import {
   MOCK_COMMUNITY_CHALLENGES,
   type CommunityChallenge,
 } from '../constants/communityChallenges';
+import {
+  mergeCommunityChallengesWithStorage,
+  VIBE_CHALLENGE_ID,
+} from '../constants/communityChallengesPersistence';
 import { CHALLENGE_TIER_ART_SRC } from '../constants/challengeTierVisuals';
 import type { CommunitySurface } from './FeedPage';
 
@@ -509,6 +513,9 @@ function HomeLeaderboard({
   );
 }
 
+/** When true, shows the cohort’s active/upcoming challenge (e.g. Working Parents) under Weekly streaks. */
+const SHOW_HOME_COHORT_SIDEBAR_CHALLENGE = false;
+
 export const Home: React.FC<HomeProps> = ({ 
     onResume, 
     currentSP, 
@@ -533,11 +540,16 @@ export const Home: React.FC<HomeProps> = ({
   const [selectedChip, setSelectedChip] = useState('chip1');
   const [selectedCohort, setSelectedCohort] = useState<CohortId>('workingparents');
 
-  const sidebarHomeChallenge = useMemo(() => {
-    const cohortKey = selectedCohort as FeedCohortId;
-    const list = MOCK_COMMUNITY_CHALLENGES.filter((c) => c.cohortId === cohortKey);
-    return list.find((c) => c.lifecycle === 'active') ?? list.find((c) => c.lifecycle === 'upcoming') ?? null;
-  }, [selectedCohort]);
+  /** Merged with Community tab enrollment (localStorage) so progress/join state stays in sync. */
+  const mergedCommunityChallenges = mergeCommunityChallengesWithStorage(MOCK_COMMUNITY_CHALLENGES);
+  const cohortKey = selectedCohort as FeedCohortId;
+  const cohortList = mergedCommunityChallenges.filter((c) => c.cohortId === cohortKey);
+  const sidebarHomeChallenge =
+    cohortList.find((c) => c.lifecycle === 'active') ?? cohortList.find((c) => c.lifecycle === 'upcoming') ?? null;
+
+  /** Second card: “It’s a Vibe” after joining from Community → Challenges. */
+  const vibeSidebarChallenge =
+    mergedCommunityChallenges.find((c) => c.id === VIBE_CHALLENGE_ID && c.optedIn) ?? null;
 
   // Intro video: muted by default, end state for "Continue watching"
   const [introVideoMuted, setIntroVideoMuted] = useState(true);
@@ -969,7 +981,7 @@ export const Home: React.FC<HomeProps> = ({
                   {streakHoursCompletedToday} hr completed today · 6.5h learned total
                 </p>
 
-                {sidebarHomeChallenge && (
+                {SHOW_HOME_COHORT_SIDEBAR_CHALLENGE && sidebarHomeChallenge && (
                   <div className="mt-3 border-t border-[var(--cds-color-grey-100)] pt-3">
                     {onNavigateToFeed ? (
                       <button
@@ -987,6 +999,35 @@ export const Home: React.FC<HomeProps> = ({
                     ) : (
                       <div className="rounded-[var(--cds-border-radius-100)] border border-transparent bg-[var(--cds-color-grey-25)] p-3">
                         <HomeSidebarMiniChallenge challenge={sidebarHomeChallenge} cohortPill={FEED_COHORT_META[sidebarHomeChallenge.cohortId].pillLabel} />
+                      </div>
+                    )}
+                  </div>
+                )}
+                {vibeSidebarChallenge &&
+                  (!SHOW_HOME_COHORT_SIDEBAR_CHALLENGE || sidebarHomeChallenge?.id !== vibeSidebarChallenge.id) && (
+                  <div className="mt-3 border-t border-[var(--cds-color-grey-100)] pt-3">
+                    {onNavigateToFeed ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onNavigateToFeed({
+                            tab: 'challenges',
+                            cohortId: 'ai',
+                          })
+                        }
+                        className="w-full rounded-[var(--cds-border-radius-100)] border border-transparent bg-[var(--cds-color-grey-25)] p-3 text-left transition hover:border-[var(--cds-color-blue-700)] hover:bg-[var(--cds-color-white)] focus-visible:border-[var(--cds-color-blue-700)]"
+                      >
+                        <HomeSidebarMiniChallenge
+                          challenge={vibeSidebarChallenge}
+                          cohortPill={FEED_COHORT_META[vibeSidebarChallenge.cohortId].pillLabel}
+                        />
+                      </button>
+                    ) : (
+                      <div className="rounded-[var(--cds-border-radius-100)] border border-transparent bg-[var(--cds-color-grey-25)] p-3">
+                        <HomeSidebarMiniChallenge
+                          challenge={vibeSidebarChallenge}
+                          cohortPill={FEED_COHORT_META[vibeSidebarChallenge.cohortId].pillLabel}
+                        />
                       </div>
                     )}
                   </div>

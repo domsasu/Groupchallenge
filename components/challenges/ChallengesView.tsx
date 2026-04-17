@@ -7,6 +7,10 @@ import {
   type ChallengeLifecycle,
   type CommunityChallenge,
 } from '../../constants/communityChallenges';
+import {
+  mergeCommunityChallengesWithStorage,
+  persistChallengesFromMock,
+} from '../../constants/communityChallengesPersistence';
 import { FEED_COHORT_META, JOINED_FEED_COHORT_IDS, type FeedCohortId } from '../../constants/feedCohorts';
 import { ChallengeCard } from './ChallengeCard';
 import { ChallengeFullDetail } from './ChallengeFullDetail';
@@ -26,8 +30,14 @@ type ChallengeSelection =
 
 export const ChallengesView: React.FC = () => {
   const [challenges, setChallenges] = useState<CommunityChallenge[]>(() =>
-    MOCK_COMMUNITY_CHALLENGES.map((c) => ({ ...c, members: c.members?.map((m) => ({ ...m })) }))
+    mergeCommunityChallengesWithStorage(
+      MOCK_COMMUNITY_CHALLENGES.map((c) => ({ ...c, members: c.members?.map((m) => ({ ...m })) }))
+    )
   );
+
+  useEffect(() => {
+    persistChallengesFromMock(challenges);
+  }, [challenges]);
   const [statusTab, setStatusTab] = useState<ChallengeLifecycle>('active');
   const [selection, setSelection] = useState<ChallengeSelection>(() => {
     const list = sortChallengesByJoinedCohortOrder(challengesForLifecycle(MOCK_COMMUNITY_CHALLENGES, 'active'));
@@ -108,22 +118,9 @@ export const ChallengesView: React.FC = () => {
     [joinFlowChallengeId, challenges]
   );
 
-  /** Opt in + random squad immediately so the strip card shows Joined and progress before the modal finishes. */
+  /** Opens the join flow only — enrollment applies in `completeJoinChallenge` after the learner finishes. */
   const beginJoinChallenge = useCallback((id: string) => {
     setJoinFlowChallengeId(id);
-    setChallenges((prev) =>
-      prev.map((c) => {
-        if (c.id !== id) return c;
-        const groupIndex = Math.floor(Math.random() * c.groupCount) + 1;
-        return {
-          ...c,
-          optedIn: true,
-          groupIndex,
-          learnerContributionProgress:
-            c.learnerContributionProgress == null ? 0 : c.learnerContributionProgress,
-        };
-      })
-    );
   }, []);
 
   const completeJoinChallenge = useCallback((id: string, groupIndex: number) => {

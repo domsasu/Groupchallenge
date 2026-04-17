@@ -5,7 +5,6 @@ import {
   approxHeadcountForGroup,
   connectorSegmentFillPercentForModules,
   formatChallengeCardHeroLabel,
-  formatProgressGoalQuantityLine,
   formatProgressGoalQuantityLineForFraction,
   getGroupProgressTowardGoal,
   parseChallengeGoalTotalUnits,
@@ -35,18 +34,14 @@ function milestoneQuantityLabel(m: { target?: string }, index: number): string {
   return String(index + 1);
 }
 
-/**
- * Resolver buckets are 0..n-1 by completed units (bucket 0 = before first cap). Milestone **circles**
- * show those caps (25, 50, …). Shift by one so pills sit under the matching outlined count (see design ref).
- */
+/** `layout[i]` lists squad numbers shown under milestone column `i` (same order as `challenge.milestones`). */
 function groupIdsAndTierIndexForMilestoneColumn(
   layout: number[][] | undefined,
   milestoneIndex: number
 ): { groupIds: number[]; tierIndexForResolver: number } {
   if (!layout?.length) return { groupIds: [], tierIndexForResolver: milestoneIndex };
-  const tier = milestoneIndex + 1;
-  if (tier >= layout.length) return { groupIds: [], tierIndexForResolver: milestoneIndex };
-  return { groupIds: layout[tier] ?? [], tierIndexForResolver: tier };
+  if (milestoneIndex >= layout.length) return { groupIds: [], tierIndexForResolver: milestoneIndex };
+  return { groupIds: layout[milestoneIndex] ?? [], tierIndexForResolver: milestoneIndex };
 }
 
 function TierSquadStack({
@@ -54,11 +49,14 @@ function TierSquadStack({
   milestoneLabel,
   milestoneIndex,
   groupIds,
+  highlightLearnerSquad,
 }: {
   challenge: CommunityChallenge;
   milestoneLabel: string;
   milestoneIndex: number;
   groupIds: number[];
+  /** When false (spectator), all squads use muted styling — no “your team” highlight. */
+  highlightLearnerSquad: boolean;
 }) {
   const groups = [...groupIds].sort((a, b) => a - b);
   const [flyout, setFlyout] = useState<{
@@ -112,7 +110,7 @@ function TierSquadStack({
         >
         {groups.length > 0 ? (
           groups.map((g) => {
-            const isLearnerGroup = g === challenge.groupIndex;
+            const isLearnerGroup = highlightLearnerSquad && g === challenge.groupIndex;
             const squad = groupSquadForChallenge(challenge, g);
             const progress01 = getGroupProgressTowardGoal(challenge, g, milestoneIndex);
             const progressLine =
@@ -205,6 +203,8 @@ export interface ChallengeFullDetailProps {
   onRequestJoinChallenge?: () => void;
   onOpenShareout?: () => void;
   onResumeLearning?: () => void;
+  /** First name for completed-challenge outcome copy (matches Home / leaderboard preview learner). */
+  learnerFirstName?: string;
 }
 
 /**
@@ -217,6 +217,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
   onRequestJoinChallenge,
   onOpenShareout,
   onResumeLearning,
+  learnerFirstName = 'Priya',
 }) => {
   const isCompleted = challenge.lifecycle === 'completed';
   const isUpcoming = challenge.lifecycle === 'upcoming';
@@ -225,11 +226,14 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
   const milestoneCaps = parseMilestoneNumericCaps(challenge);
   const goalTotal = parseChallengeGoalTotalUnits(challenge);
   const learnerGroupExplicit = challenge.groupProgressTowardGoal?.[challenge.groupIndex];
-  /** Learner squad’s share of the final goal (falls back to card progress when no per-group map). */
-  const progress01ForGoal =
-    learnerGroupExplicit != null ? learnerGroupExplicit : challenge.cardProgress;
+  /** After opt-in: squad’s progress toward goal, else card progress; hidden in UI until joined. */
+  const progress01ForGoal = optedIn
+    ? learnerGroupExplicit != null
+      ? learnerGroupExplicit
+      : challenge.cardProgress
+    : null;
   const learnerUnitsCompleted =
-    goalTotal != null
+    goalTotal != null && progress01ForGoal != null
       ? Math.round(Math.min(1, Math.max(0, progress01ForGoal)) * goalTotal)
       : null;
   const useModuleConnectorModel =
@@ -242,12 +246,18 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
     : resolveTierIndexForCard(challenge);
 
   const progressGoalLine =
-    formatProgressGoalQuantityLineForFraction(challenge, progress01ForGoal) ??
-    formatProgressGoalQuantityLine(challenge);
-  const progressFallbackPct = `${Math.round(Math.min(1, Math.max(0, challenge.cardProgress)) * 100)}%`;
+    progress01ForGoal == null
+      ? null
+      : formatProgressGoalQuantityLineForFraction(challenge, progress01ForGoal);
+  const progressFallbackPct =
+    progress01ForGoal != null
+      ? `${Math.round(Math.min(1, Math.max(0, progress01ForGoal)) * 100)}%`
+      : `${Math.round(Math.min(1, Math.max(0, challenge.cardProgress)) * 100)}%`;
   const tierGroupsLayout = resolveGroupsAtTierColumns(challenge) ?? challenge.groupsAtMilestoneTier;
   const learnerGroupSquad = groupSquadForChallenge(challenge, challenge.groupIndex);
+  /** Opted-out learners see all teams expanded; opted-in uses hover to expand (saves vertical space). */
   const [teamRankingsOpen, setTeamRankingsOpen] = useState(false);
+  const teamsReveal = !optedIn || teamRankingsOpen;
 
   useEffect(() => {
     setTeamRankingsOpen(false);
@@ -336,7 +346,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
               <div className="flex min-w-0 flex-col justify-center gap-4 px-4 pt-5 pb-0 sm:px-6 sm:py-6">
                 <div>
                   <p className="text-xl font-bold leading-tight tracking-tight text-[var(--cds-color-grey-975)] sm:text-2xl">
-                    {FEED_COHORT_META[challenge.cohortId].pillLabel} cohort challenge winners!
+                    {FEED_COHORT_META[challenge.cohortId].pillLabel} cohort challenge winners
                   </p>
                   <p className="mt-2 text-sm font-medium leading-snug text-[var(--cds-color-grey-600)] sm:text-base">
                     {challenge.completedHeroSubline ?? `Great job ${learnerGroupSquad.label}!`}
@@ -346,13 +356,13 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                   <p className="cds-body-secondary text-[var(--cds-color-grey-975)]">
                     {outcomeHasCourseStat ? (
                       <>
-                        You received the award for <strong>{outcomeAwardLabel}</strong>, and completed{' '}
-                        <strong>{outcomeCourseCount}</strong>{' '}
-                        {outcomeCourseCount === 1 ? 'course' : 'courses'}.
+                        {learnerFirstName}, you completed <strong>{outcomeCourseCount}</strong>{' '}
+                        {outcomeCourseCount === 1 ? 'course' : 'courses'} and received the award for{' '}
+                        <strong>{outcomeAwardLabel}</strong>.
                       </>
                     ) : (
                       <>
-                        You received the award for <strong>{outcomeAwardLabel}</strong>.
+                        {learnerFirstName}, you received the award for <strong>{outcomeAwardLabel}</strong>.
                       </>
                     )}
                   </p>
@@ -401,7 +411,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
               <span className="cds-title-medium-sm text-[var(--cds-color-grey-975)]">
                 {FEED_COHORT_META[challenge.cohortId].pillLabel}
               </span>
-              {challenge.id !== 'ch-active-ai-vibe-coding' && (
+              {optedIn && (
                 <span
                   className={`inline-flex max-w-full shrink-0 items-center rounded-full border px-2.5 py-1 text-[10px] font-bold leading-tight ${learnerGroupSquad.active}`}
                 >
@@ -415,20 +425,26 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
               onMouseEnter={() => {
                 if (tierGroupsLayout != null) setTeamRankingsOpen(true);
               }}
-              onMouseLeave={() => setTeamRankingsOpen(false)}
+              onMouseLeave={() => {
+                setTeamRankingsOpen(false);
+              }}
             >
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <p className="cds-body-secondary font-semibold text-[var(--cds-color-grey-975)]">Progress to goal</p>
-              <span className="text-lg font-bold tabular-nums text-[var(--cds-color-grey-975)]">
-                {progressGoalLine ?? progressFallbackPct}
-              </span>
-            </div>
+            {optedIn && (
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <p className="cds-body-secondary font-semibold text-[var(--cds-color-grey-975)]">Progress to goal</p>
+                <span className="text-lg font-bold tabular-nums text-[var(--cds-color-grey-975)]">
+                  {progressGoalLine ?? progressFallbackPct}
+                </span>
+              </div>
+            )}
 
-            <div className="mt-5" role="list">
+            <div className={optedIn ? 'mt-5' : 'mt-0'} role="list">
               <div className="flex items-start gap-0">
                 {challenge.milestones.map((m, i) => {
                   const trackShowsLearnerProgress = optedIn;
                   const isHeadStep = trackShowsLearnerProgress && i === tierIdx;
+                  /** First milestone is the shared start line — keep it neutral, not emerald “current step”. */
+                  const isStartMilestoneOnly = tierIdx === 0 && i === 0;
                   const isCompletedTier =
                     trackShowsLearnerProgress && useModuleConnectorModel && i < tierIdx;
                   const gapCount = Math.max(0, challenge.milestones.length - 1);
@@ -445,7 +461,8 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                   );
                   const isFinalMilestone = i === challenge.milestones.length - 1;
                   const showEmeraldCircle =
-                    !isFinalMilestone && (isCompletedTier || isHeadStep);
+                    !isFinalMilestone &&
+                    (isCompletedTier || (isHeadStep && !isStartMilestoneOnly));
                   return (
                     <React.Fragment key={m.id}>
                       {i > 0 && (
@@ -484,16 +501,16 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                         {tierGroupsLayout != null && (
                           <div
                             className={`grid w-full min-w-0 transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
-                              teamRankingsOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                              teamsReveal ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                             }`}
-                            aria-hidden={!teamRankingsOpen}
+                            aria-hidden={!teamsReveal}
                           >
                             <div
-                              className={`min-h-0 ${teamRankingsOpen ? 'overflow-visible' : 'overflow-hidden'}`}
+                              className={`min-h-0 ${teamsReveal ? 'overflow-visible' : 'overflow-hidden'}`}
                             >
                               <div
                                 className={`mt-2 w-full min-w-0 transition-opacity duration-300 ease-out motion-reduce:transition-none ${
-                                  teamRankingsOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+                                  teamsReveal ? 'opacity-100' : 'pointer-events-none opacity-0'
                                 }`}
                                 aria-label={`Team rankings at ${m.target ?? m.label}`}
                               >
@@ -502,6 +519,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
                                   milestoneLabel={m.label}
                                   milestoneIndex={tierIndexForResolver}
                                   groupIds={groupIds}
+                                  highlightLearnerSquad={optedIn}
                                 />
                               </div>
                             </div>
@@ -520,6 +538,7 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
         {challenge.milestones.length > 0 &&
           !isUpcoming &&
           !isCompleted &&
+          optedIn &&
           challenge.learnerContributionProgress != null && (
             <div className="rounded-[var(--cds-border-radius-100)] p-4">
               <h4 className="cds-subtitle-sm text-[var(--cds-color-grey-975)]">Your contribution</h4>
