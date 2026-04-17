@@ -8,9 +8,11 @@ import {
   type CommunityChallenge,
 } from '../../constants/communityChallenges';
 import {
+  clearChallengeJoinedViaFlow,
   markChallengeJoinedViaFlow,
   mergeCommunityChallengesWithStorage,
   persistChallengesFromMock,
+  VIBE_CHALLENGE_ID,
 } from '../../constants/communityChallengesPersistence';
 import { FEED_COHORT_META, JOINED_FEED_COHORT_IDS, type FeedCohortId } from '../../constants/feedCohorts';
 import { ChallengeCard } from './ChallengeCard';
@@ -99,6 +101,9 @@ export const ChallengesView: React.FC = () => {
       prev.map((c) => {
         if (c.id !== id) return c;
         const next = !c.optedIn;
+        if (!next && id === VIBE_CHALLENGE_ID) {
+          clearChallengeJoinedViaFlow(VIBE_CHALLENGE_ID);
+        }
         return {
           ...c,
           optedIn: next,

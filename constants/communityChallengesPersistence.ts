@@ -6,8 +6,9 @@ const STORAGE_KEY = 'groupchallenge.communityChallenges.v6';
 /**
  * Set only when the learner finishes the multi-step Community join modal (`completeJoinChallenge`).
  * Vibe “joined” / Home widget must not rely on `optedIn` in STORAGE_KEY alone (legacy could show joined after refresh).
+ * v2: reset stale flags; pair with `clearChallengeJoinedViaFlow` when the learner leaves the challenge.
  */
-const JOIN_FLOW_COMPLETED_KEY = 'groupchallenge.joinFlowCompleted.v1';
+const JOIN_FLOW_COMPLETED_KEY = 'groupchallenge.joinFlowCompleted.v2';
 
 /** Stable id for “It’s a Vibe” (used by tests / deep links). */
 export const VIBE_CHALLENGE_ID = 'ch-active-ai-vibe-coding' as const;
@@ -60,6 +61,20 @@ export function markChallengeJoinedViaFlow(challengeId: string): void {
     const prev = readJoinFlowCompleted();
     if (prev[challengeId]) return;
     const next = { ...prev, [challengeId]: true as const };
+    window.localStorage.setItem(JOIN_FLOW_COMPLETED_KEY, JSON.stringify(next));
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
+/** Call when the learner leaves “It’s a Vibe” so reload does not re-apply joined state from `markChallengeJoinedViaFlow`. */
+export function clearChallengeJoinedViaFlow(challengeId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const prev = readJoinFlowCompleted();
+    if (!prev[challengeId]) return;
+    const next = { ...prev };
+    delete next[challengeId];
     window.localStorage.setItem(JOIN_FLOW_COMPLETED_KEY, JSON.stringify(next));
   } catch {
     // ignore quota / private mode

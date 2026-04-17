@@ -67,7 +67,7 @@ export const EnrolledCourseMiniCard: React.FC<EnrolledCourseMiniCardProps> = ({
           rel="noopener noreferrer"
           className="inline-flex w-full shrink-0 items-center justify-center rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--cds-color-blue-800)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)] sm:w-auto sm:self-center"
         >
-          Resume
+          View course
         </a>
       </div>
     </div>
