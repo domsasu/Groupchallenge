@@ -522,52 +522,81 @@ function HomeLeaderboardContent({
 
 function HomeLeaderboardMiniWidget({
   selectedCohort,
+  onSelectCohort,
   onOpen,
 }: {
   selectedCohort: CohortId;
+  onSelectCohort: (id: CohortId) => void;
   onOpen: () => void;
 }) {
   const cohort = COHORTS.find((c) => c.id === selectedCohort);
   const board = COHORT_LEADERBOARD[selectedCohort];
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="w-full rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-4 text-left shadow-[var(--cds-elevation-level1)] transition hover:border-[var(--cds-color-grey-200)] hover:shadow-[var(--cds-elevation-level2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
-      aria-haspopup="dialog"
-      aria-label={
-        cohort
-          ? `Open leaderboard, ${cohort.label}, your rank ${board.userRank} out of ${cohort.members.toLocaleString()}`
-          : 'Open leaderboard'
-      }
-    >
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <h3 className="cds-subtitle-sm text-[var(--cds-color-grey-975)]">Leaderboard</h3>
-        <span className="cds-body-secondary max-w-[55%] min-w-0 shrink-0 truncate text-right text-[var(--cds-color-grey-600)]">
-          {cohort?.label ?? selectedCohort}
-        </span>
-      </div>
-      <p className="cds-body-tertiary mb-2 text-[var(--cds-color-grey-600)]">
-        {cohort
-          ? `Your rank ${board.userRank} out of ${cohort.members.toLocaleString()}`
-          : `Your rank ${board.userRank} out of —`}
-      </p>
-      <div className="min-w-0">
-        <div className="space-y-0">
-          {board.around.map((p) => (
-            <React.Fragment key={p.rank}>
-              <MiniLeaderboardRow
-                peer={p}
-                isUser={p.rank === board.userRank}
-                isMedal={false}
-                compact
-              />
-            </React.Fragment>
-          ))}
+    <div className="w-full rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-4 text-left shadow-[var(--cds-elevation-level1)] transition hover:border-[var(--cds-color-grey-200)] hover:shadow-[var(--cds-elevation-level2)]">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="cds-subtitle-sm m-0 text-[var(--cds-color-grey-975)] leading-none">Leaderboard</h3>
+        <div className="relative max-w-[55%] min-w-0 shrink-0">
+          <label htmlFor="home-mini-leaderboard-cohort" className="sr-only">
+            Select cohort leaderboard
+          </label>
+          <select
+            id="home-mini-leaderboard-cohort"
+            value={selectedCohort}
+            onChange={(e) => onSelectCohort(e.target.value as CohortId)}
+            className="cds-body-secondary min-h-8 w-full min-w-0 appearance-none border-0 bg-transparent py-1 pl-0 pr-7 text-right text-[var(--cds-color-grey-600)] shadow-none outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0"
+          >
+            {COHORTS.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          <span
+            className="pointer-events-none absolute inset-y-0 right-1 flex items-center text-[var(--cds-color-grey-600)]"
+            aria-hidden
+          >
+            <span
+              className="material-symbols-rounded flex shrink-0 items-center leading-none"
+              style={{ fontSize: 18, lineHeight: 1 }}
+            >
+              expand_more
+            </span>
+          </span>
         </div>
       </div>
-    </button>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="w-full rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
+        aria-haspopup="dialog"
+        aria-label={
+          cohort
+            ? `Open leaderboard, ${cohort.label}, you're ${board.userRank} of ${cohort.members.toLocaleString()}`
+            : 'Open leaderboard'
+        }
+      >
+        <p className="cds-body-tertiary mb-2 text-[var(--cds-color-grey-600)]">
+          {cohort
+            ? `You're ${board.userRank} of ${cohort.members.toLocaleString()}`
+            : `You're ${board.userRank} of —`}
+        </p>
+        <div className="min-w-0">
+          <div className="space-y-0">
+            {board.around.map((p) => (
+              <React.Fragment key={p.rank}>
+                <MiniLeaderboardRow
+                  peer={p}
+                  isUser={p.rank === board.userRank}
+                  isMedal={false}
+                  compact
+                />
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </button>
+    </div>
   );
 }
 
@@ -1157,6 +1186,7 @@ export const Home: React.FC<HomeProps> = ({
 
               <HomeLeaderboardMiniWidget
                 selectedCohort={selectedCohort}
+                onSelectCohort={setSelectedCohort}
                 onOpen={() => setLeaderboardModalOpen(true)}
               />
             </div>

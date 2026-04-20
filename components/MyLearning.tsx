@@ -270,10 +270,10 @@ export function MiniLeaderboardRow({
   peer: LeaderboardPeer;
   isUser: boolean;
   isMedal: boolean;
-  /** Tighter row for condensed layouts (e.g. Home). Parent panel should use `p-3` when compact. */
+  /** Tighter row for condensed layouts (e.g. Home). Highlight bleed should match parent horizontal padding (`p-4` on Home mini widget). */
   compact?: boolean;
 }) {
-  const pad = compact ? '-mx-3 px-3' : '-mx-5 px-5';
+  const pad = compact ? '-mx-4 px-4' : '-mx-5 px-5';
   return (
     <div
       className={`flex items-center gap-1.5 ${
