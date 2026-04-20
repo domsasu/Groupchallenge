@@ -19,11 +19,13 @@ export const FeedTimeline: React.FC<FeedTimelineProps> = ({
   activeDisciplineSlugs = [],
 }) => {
   const dataScienceDisciplineActive = activeDisciplineSlugs.includes(DATA_SCIENCE_DISCIPLINE_SLUG);
+  /** Community feed: video rows only (hide articles and podcasts). */
+  const videoItems = items.filter((item) => item.type === 'video');
   let videoOrdinal = 0;
 
   return (
     <div className="space-y-6">
-      {items.map((item, i) => {
+      {videoItems.map((item, i) => {
         let feedPreviewVideoSrc: string | undefined;
         if (item.type === 'video') {
           if (dataScienceDisciplineActive && videoOrdinal < FEED_DATA_SCIENCE_PREVIEW_VIDEOS.length) {

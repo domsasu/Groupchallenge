@@ -66,7 +66,7 @@ interface MiniFeedClipVideoProps {
   src?: string;
 }
 
-const MiniFeedClipVideo: React.FC<MiniFeedClipVideoProps> = ({
+export const MiniFeedClipVideo: React.FC<MiniFeedClipVideoProps> = ({
   sectionActive,
   isActiveSegment,
   segmentNonce,
@@ -75,6 +75,8 @@ const MiniFeedClipVideo: React.FC<MiniFeedClipVideoProps> = ({
   src = MINI_FEED_CLIP_VIDEO_SRC,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -120,23 +122,59 @@ const MiniFeedClipVideo: React.FC<MiniFeedClipVideoProps> = ({
         aria-hidden
         disablePictureInPicture
       />
-      <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-2 opacity-0 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
-        <button
-          type="button"
-          className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/35 bg-black/55 px-2.5 py-1.5 text-[var(--cds-color-white)] shadow-sm backdrop-blur-[2px] transition-colors hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleMute();
-          }}
-          aria-label={userUnmuted ? 'Mute preview clip' : 'Unmute preview clip'}
-        >
-          {userUnmuted ? (
-            <Icons.VolumeX className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-          ) : (
-            <Icons.Volume className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-          )}
-          <span className="text-xs font-medium leading-none text-white">{userUnmuted ? 'Mute' : 'Unmute'}</span>
-        </button>
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between opacity-0 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+        <div className="flex justify-end p-2">
+          <button
+            type="button"
+            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/35 bg-black/55 px-2.5 py-1.5 text-[var(--cds-color-white)] shadow-sm backdrop-blur-[2px] transition-colors hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleMute();
+            }}
+            aria-label={userUnmuted ? 'Mute preview clip' : 'Unmute preview clip'}
+          >
+            {userUnmuted ? (
+              <Icons.VolumeX className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+            ) : (
+              <Icons.Volume className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+            )}
+            <span className="text-xs font-medium leading-none text-white">{userUnmuted ? 'Mute' : 'Unmute'}</span>
+          </button>
+        </div>
+        <div className="flex items-center justify-center gap-2 p-2">
+          <button
+            type="button"
+            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/35 bg-black/55 text-white shadow-sm backdrop-blur-[2px] transition-colors hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            aria-pressed={liked}
+            aria-label={liked ? 'Unlike' : 'Like'}
+            onClick={(e) => {
+              e.stopPropagation();
+              setLiked((v) => !v);
+            }}
+          >
+            <Icons.Like
+              className={`h-5 w-5 shrink-0 transition-colors ${liked ? 'text-amber-300' : 'text-white'}`}
+              strokeWidth={liked ? 2.5 : 2}
+              aria-hidden
+            />
+          </button>
+          <button
+            type="button"
+            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/35 bg-black/55 text-white shadow-sm backdrop-blur-[2px] transition-colors hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            aria-pressed={saved}
+            aria-label={saved ? 'Remove from saved' : 'Save'}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSaved((v) => !v);
+            }}
+          >
+            <Icons.Bookmark
+              className={`h-5 w-5 shrink-0 ${saved ? 'fill-white text-white' : ''}`}
+              strokeWidth={2}
+              aria-hidden
+            />
+          </button>
+        </div>
       </div>
     </>
   );

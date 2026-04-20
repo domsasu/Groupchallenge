@@ -182,6 +182,41 @@ function disciplineLabelsJoined(slugs: string[]): string | undefined {
   return parts.length ? parts.join(' · ') : undefined;
 }
 
+/** Label for discipline multi-select (e.g. mini-feed / stacked feed section pills). Empty = “All”. */
+export function feedDisciplineSelectionPill(slugs: readonly string[] | undefined): string {
+  const n = normalizeFeedDisciplineSlugs(slugs);
+  if (n.length === 0) return 'All';
+  return disciplineLabelsJoined(n) ?? 'All';
+}
+
+/** One chip per selected discipline; empty selection = single “All” chip. */
+export function feedDisciplineSelectionPills(
+  slugs: readonly string[] | undefined
+): { id: string; label: string }[] {
+  const n = normalizeFeedDisciplineSlugs(slugs);
+  if (n.length === 0) return [{ id: '__all__', label: 'All' }];
+  return n.map((slug) => ({
+    id: slug,
+    label: courseraDisciplineLabelForSlug(slug) ?? slug,
+  }));
+}
+
+/**
+ * Cohort stacked section: cohort hashtag first, then the same topic chips as “Based on your topics”
+ * (omits a lone “All” so the column matches that layout when filters are specific).
+ */
+export function feedCohortStackPills(
+  cohortId: FeedCohortId,
+  activeDisciplineSlugs: readonly string[] | undefined
+): { id: string; label: string }[] {
+  const cohortPill = { id: `cohort-${cohortId}`, label: FEED_COHORT_META[cohortId].pillLabel };
+  const topics = feedDisciplineSelectionPills(activeDisciplineSlugs);
+  if (topics.length === 1 && topics[0].id === '__all__') {
+    return [cohortPill];
+  }
+  return [cohortPill, ...topics.filter((t) => t.id !== '__all__')];
+}
+
 function disciplineCompositeKey(slugs: string[]): string | null {
   return slugs.length ? [...slugs].sort().join('\0') : null;
 }

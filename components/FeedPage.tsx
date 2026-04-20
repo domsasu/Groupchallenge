@@ -1,63 +1,58 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSiteVariant } from '../context/SiteVariantContext';
 import {
-  DEFAULT_FEED_DISCIPLINE_SLUGS,
   JOINABLE_FEED_COHORT_IDS,
   JOINED_FEED_COHORT_IDS,
   getAllStreamFeedPlaceholderItems,
-  getFeedPlaceholderItems,
   type FeedCohortId,
   type FeedPlaceholderItem,
 } from '../constants/feedCohorts';
-import { FeedCohortPills } from './feed/FeedCohortPills';
-import { FeedDiscoverRail } from './feed/FeedDiscoverRail';
-import { FeedTimeline } from './feed/FeedTimeline';
+import { FeedCohortPills, type FeedPillSelection } from './feed/FeedCohortPills';
+import { FeedStackedGroupSection } from './feed/FeedStackedGroupSection';
 import { Icons } from './Icons';
 import { enrichFeedVideoThumbnails } from '../services/unsplashThumbnails';
 import { ChallengesView } from './challenges/ChallengesView';
+import { CommunityLeaderboardPanel } from './CommunityLeaderboardPanel';
+import type { CohortId } from './MyLearning';
 
-export type CommunitySurface = 'feed' | 'challenges';
+export type CommunitySurface = 'feed' | 'challenges' | 'leaderboard';
 
 export interface FeedPageProps {
   /** When opening Community from Home mini-feed, select this cohort (same as mini-feed lead cohort). */
   initialSelectedCohortId?: FeedCohortId;
-  /** Open Community on Feed vs Challenges (e.g. deep link from Home). */
+  /** Open Community on a specific tab (e.g. deep link from Home). Defaults to Feed. */
   initialCommunityTab?: CommunitySurface;
 }
 
 export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, initialCommunityTab }) => {
   const { variant, surface } = useSiteVariant();
-  /** `null` = All snacks stream (mixed cohorts). */
-  const [selectedCohortId, setSelectedCohortId] = useState<FeedCohortId | null>(
-    () => initialSelectedCohortId ?? null
-  );
-  /** Multi-select Coursera browse disciplines; empty = same as “All” (no discipline lens). */
-  const [activeDisciplineSlugs, setActiveDisciplineSlugs] = useState<string[]>(() => [
-    ...DEFAULT_FEED_DISCIPLINE_SLUGS,
-  ]);
-  /** Cohorts the user joined via the rail CTA (moved from discover into “yours”). */
-  const [joinedViaRailIds, setJoinedViaRailIds] = useState<FeedCohortId[]>([]);
+  /** One active filter or none — none loads the full interleaved stream (all groups/topics lens). */
+  const [pillSelection, setPillSelection] = useState<FeedPillSelection>(() => {
+    if (initialSelectedCohortId && JOINED_FEED_COHORT_IDS.includes(initialSelectedCohortId)) {
+      return { kind: 'cohort', cohortId: initialSelectedCohortId };
+    }
+    return { kind: 'none' };
+  });
+
+  const activeDisciplineSlugs = useMemo((): string[] => {
+    if (pillSelection.kind === 'topic') return [pillSelection.slug];
+    return [];
+  }, [pillSelection]);
 
   const [communitySurface, setCommunitySurface] = useState<CommunitySurface>(
-    () => initialCommunityTab ?? 'challenges'
+    () => initialCommunityTab ?? 'feed'
   );
+  const [leaderboardCohortId, setLeaderboardCohortId] = useState<CohortId>('workingparents');
 
   useEffect(() => {
     if (initialCommunityTab) setCommunitySurface(initialCommunityTab);
   }, [initialCommunityTab]);
 
-  const railJoinedIds = useMemo(
-    () => [...JOINED_FEED_COHORT_IDS, ...joinedViaRailIds],
-    [joinedViaRailIds]
-  );
-  const railJoinableIds = useMemo(
-    () => JOINABLE_FEED_COHORT_IDS.filter((id) => !joinedViaRailIds.includes(id)),
-    [joinedViaRailIds]
-  );
+  const railJoinedIds = JOINED_FEED_COHORT_IDS;
 
   const allStreamCohortIds = useMemo(
-    () => [...railJoinedIds, ...railJoinableIds],
-    [railJoinedIds, railJoinableIds]
+    () => [...JOINED_FEED_COHORT_IDS, ...JOINABLE_FEED_COHORT_IDS],
+    []
   );
 
   const disciplineKey = useMemo(
@@ -65,32 +60,36 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
     [activeDisciplineSlugs]
   );
 
-  const feedItems = useMemo(
+  /** Discipline-first stream (all joined + discover cohorts interleaved), ordered by active browse tags. */
+  const disciplineStreamItems = useMemo(
     () =>
-      selectedCohortId === null
-        ? getAllStreamFeedPlaceholderItems(allStreamCohortIds, {
-            disciplineSlugs: activeDisciplineSlugs,
-          })
-        : getFeedPlaceholderItems(selectedCohortId, {
-            disciplineSlugs: activeDisciplineSlugs,
-          }),
-    [selectedCohortId, allStreamCohortIds, activeDisciplineSlugs]
+      getAllStreamFeedPlaceholderItems(allStreamCohortIds, {
+        disciplineSlugs: activeDisciplineSlugs,
+      }),
+    [allStreamCohortIds, activeDisciplineSlugs]
   );
 
-  const [feedItemsWithThumbs, setFeedItemsWithThumbs] = useState<FeedPlaceholderItem[] | null>(null);
+  const flatForThumbnailEnrich = useMemo(() => [...disciplineStreamItems], [disciplineStreamItems]);
+
+  const [stackItemsEnriched, setStackItemsEnriched] = useState<FeedPlaceholderItem[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setFeedItemsWithThumbs(null);
-    enrichFeedVideoThumbnails(feedItems).then((enriched) => {
-      if (!cancelled) setFeedItemsWithThumbs(enriched);
+    setStackItemsEnriched(null);
+    enrichFeedVideoThumbnails(flatForThumbnailEnrich).then((enriched) => {
+      if (!cancelled) setStackItemsEnriched(enriched);
     });
     return () => {
       cancelled = true;
     };
-  }, [feedItems]);
+  }, [flatForThumbnailEnrich]);
 
-  const timelineItems = feedItemsWithThumbs ?? feedItems;
+  const stackedFeedSlices = useMemo(() => {
+    const flat = stackItemsEnriched ?? flatForThumbnailEnrich;
+    const dLen = disciplineStreamItems.length;
+    const disciplineItems = flat.slice(0, dLen);
+    return { disciplineItems };
+  }, [stackItemsEnriched, flatForThumbnailEnrich, disciplineStreamItems]);
 
   return (
     <div className="flex-1 bg-[var(--cds-color-grey-25)] overflow-y-auto custom-scrollbar">
@@ -102,6 +101,22 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
         <div className="sticky top-0 z-50 mb-5 w-full min-w-0 border-b border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] shadow-sm">
           <div className="mx-auto max-w-[1440px] px-4 pt-4 md:px-6 md:pt-5">
             <div className="flex gap-6" role="tablist" aria-label="Community">
+              <button
+                type="button"
+                role="tab"
+                id="community-tab-feed"
+                aria-controls="community-panel-feed"
+                aria-selected={communitySurface === 'feed'}
+                tabIndex={communitySurface === 'feed' ? 0 : -1}
+                onClick={() => setCommunitySurface('feed')}
+                className={`cds-body-secondary border-b-2 py-3 transition-colors ${
+                  communitySurface === 'feed'
+                    ? 'border-[var(--cds-color-grey-975)] font-semibold text-[var(--cds-color-grey-975)]'
+                    : 'border-transparent text-[var(--cds-color-grey-600)] hover:text-[var(--cds-color-grey-975)]'
+                }`}
+              >
+                Feed
+              </button>
               <button
                 type="button"
                 role="tab"
@@ -121,37 +136,44 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
               <button
                 type="button"
                 role="tab"
-                id="community-tab-feed"
-                aria-controls="community-panel-feed"
-                aria-selected={communitySurface === 'feed'}
-                tabIndex={communitySurface === 'feed' ? 0 : -1}
-                onClick={() => setCommunitySurface('feed')}
+                id="community-tab-leaderboard"
+                aria-controls="community-panel-leaderboard"
+                aria-selected={communitySurface === 'leaderboard'}
+                tabIndex={communitySurface === 'leaderboard' ? 0 : -1}
+                onClick={() => setCommunitySurface('leaderboard')}
                 className={`cds-body-secondary border-b-2 py-3 transition-colors ${
-                  communitySurface === 'feed'
+                  communitySurface === 'leaderboard'
                     ? 'border-[var(--cds-color-grey-975)] font-semibold text-[var(--cds-color-grey-975)]'
                     : 'border-transparent text-[var(--cds-color-grey-600)] hover:text-[var(--cds-color-grey-975)]'
                 }`}
               >
-                Feed
+                Leaderboard
               </button>
             </div>
           </div>
         </div>
 
         <div className="relative z-0 mx-auto max-w-[1440px] px-4 pb-4 md:px-6 md:pb-5 pt-0">
-          {communitySurface === 'feed' ? (
+          {communitySurface === 'feed' && (
             <div id="community-panel-feed" role="tabpanel" aria-labelledby="community-tab-feed" className="relative z-0">
               <div className="mb-5 flex min-w-0 items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <FeedCohortPills
                     variant="coursera"
-                    selectedSlugs={activeDisciplineSlugs}
-                    onToggleSlug={(slug) => {
-                      setActiveDisciplineSlugs((prev) =>
-                        prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-                      );
-                    }}
-                    onClearDisciplines={() => setActiveDisciplineSlugs([])}
+                    joinedCohortIds={railJoinedIds}
+                    pillSelection={pillSelection}
+                    onSelectCohort={(cohortId) =>
+                      setPillSelection((prev) =>
+                        prev.kind === 'cohort' && prev.cohortId === cohortId
+                          ? { kind: 'none' }
+                          : { kind: 'cohort', cohortId }
+                      )
+                    }
+                    onSelectTopic={(slug) =>
+                      setPillSelection((prev) =>
+                        prev.kind === 'topic' && prev.slug === slug ? { kind: 'none' } : { kind: 'topic', slug }
+                      )
+                    }
                   />
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -172,32 +194,42 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-x-6 lg:gap-y-4">
-                <div className="order-1 min-w-0 lg:col-span-9">
-                  <FeedTimeline
-                    key={`${selectedCohortId ?? 'all'}-${disciplineKey}`}
-                    cohortId={selectedCohortId ?? 'all'}
-                    items={timelineItems}
-                    activeDisciplineSlugs={activeDisciplineSlugs}
-                  />
-                </div>
-                <div className="order-2 min-w-0 lg:col-span-3">
-                  <FeedDiscoverRail
-                    activeCohortId={selectedCohortId}
-                    onSelectCohort={setSelectedCohortId}
-                    joinedCohortIds={railJoinedIds}
-                    joinableCohortIds={railJoinableIds}
-                    onJoinCohort={(id) => {
-                      setJoinedViaRailIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-                      setSelectedCohortId(id);
-                    }}
-                  />
-                </div>
+              <div className="flex min-w-0 flex-col gap-6">
+                <FeedStackedGroupSection
+                  key={`discipline-${disciplineKey}`}
+                  sectionKey={`discipline-${disciplineKey}`}
+                  items={stackedFeedSlices.disciplineItems}
+                  activeDisciplineSlugs={activeDisciplineSlugs}
+                  previewIndexOffset={0}
+                  ariaLabel="Videos matched to your selected Coursera topics across communities."
+                />
               </div>
             </div>
-          ) : (
-            <div role="tabpanel" aria-labelledby="community-tab-challenges" id="community-panel-challenges" className="relative z-0">
+          )}
+
+          {communitySurface === 'challenges' && (
+            <div
+              role="tabpanel"
+              aria-labelledby="community-tab-challenges"
+              id="community-panel-challenges"
+              className="relative z-0"
+            >
               <ChallengesView />
+            </div>
+          )}
+
+          {communitySurface === 'leaderboard' && (
+            <div
+              id="community-panel-leaderboard"
+              role="tabpanel"
+              aria-labelledby="community-tab-leaderboard"
+              className="relative z-0"
+            >
+              <CommunityLeaderboardPanel
+                selectedCohort={leaderboardCohortId}
+                onSelectCohort={setLeaderboardCohortId}
+                headingId="community-leaderboard-heading"
+              />
             </div>
           )}
         </div>

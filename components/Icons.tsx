@@ -54,7 +54,8 @@ import {
   Brain,
   VolumeX,
   Volume2,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Bookmark
 } from 'lucide-react';
 
 export const Icons = {
@@ -94,6 +95,8 @@ export const Icons = {
   History: History,
   Retry: RefreshCw,
   Share: Share,
+  /** Save for later (outline / filled when active). */
+  Bookmark: Bookmark,
   Download: Download,
   Sparkles: Sparkles,
   Info: Info,

@@ -30,6 +30,7 @@ import {
 } from '../constants/communityChallenges';
 import { mergeCommunityChallengesWithStorage } from '../constants/communityChallengesPersistence';
 import { CHALLENGE_TIER_ART_SRC } from '../constants/challengeTierVisuals';
+import { CommunityLeaderboardPanel } from './CommunityLeaderboardPanel';
 import type { CommunitySurface } from './FeedPage';
 
 // Assessment sub-skill results type - matches App.tsx
@@ -435,91 +436,6 @@ function HomeSidebarMiniChallenge({
   );
 }
 
-function HomeLeaderboardContent({
-  selectedCohort,
-  onSelectCohort,
-  headingId,
-}: {
-  selectedCohort: CohortId;
-  onSelectCohort: (id: CohortId) => void;
-  headingId?: string;
-}) {
-  const board = COHORT_LEADERBOARD[selectedCohort];
-
-  return (
-    <div className="flex min-w-0 flex-col gap-4">
-      <div className="flex flex-col gap-3">
-        <h2
-          id={headingId}
-          className="cds-subtitle-lg text-[var(--cds-color-grey-975)]"
-        >
-          Leaderboard
-        </h2>
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          {COHORTS.map((cohort) => {
-            const isActive = cohort.id === selectedCohort;
-            return (
-              <button
-                key={cohort.id}
-                type="button"
-                onClick={() => onSelectCohort(cohort.id)}
-                className={`cds-body-secondary h-8 rounded-[var(--cds-border-radius-400)] px-3 py-1 transition-colors ${
-                  isActive
-                    ? 'bg-[var(--cds-color-grey-800)] text-[var(--cds-color-white)]'
-                    : 'bg-[var(--cds-color-white)] border border-[var(--cds-color-grey-100)] text-[var(--cds-color-grey-975)] hover:bg-[var(--cds-color-grey-25)]'
-                }`}
-              >
-                {cohort.label}{' '}
-                <span className={isActive ? 'text-[var(--cds-color-grey-200)]' : 'text-[var(--cds-color-grey-600)]'}>
-                  {cohort.members.toLocaleString()}
-                </span>
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--cds-color-grey-600)] transition-colors hover:bg-[var(--cds-color-grey-50)] hover:text-[var(--cds-color-grey-975)]"
-            aria-label="Join a cohort"
-          >
-            <span className="material-symbols-rounded" style={{ fontSize: 20 }}>
-              add
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <p className="max-w-3xl cds-body-tertiary text-[var(--cds-color-grey-600)]">
-        Rankings use total learning hours logged in the cohort you have selected. Use the cohort pills above to switch
-        boards and compare how you rank.
-      </p>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
-          <p className="cds-body-tertiary mb-1.5 text-[var(--cds-color-grey-600)]">Top 3</p>
-          <div className="space-y-1">
-            {board.top3.map((p) => (
-              <React.Fragment key={p.rank}>
-                <MiniLeaderboardRow peer={p} isUser={p.rank === board.userRank} isMedal />
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-5">
-          <p className="cds-body-tertiary mb-1.5 text-[var(--cds-color-grey-600)]">Around you</p>
-          <div className="space-y-1">
-            {board.around.map((p) => (
-              <React.Fragment key={p.rank}>
-                <MiniLeaderboardRow peer={p} isUser={p.rank === board.userRank} isMedal={false} />
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function HomeLeaderboardMiniWidget({
   selectedCohort,
   onSelectCohort,
@@ -535,7 +451,9 @@ function HomeLeaderboardMiniWidget({
   return (
     <div className="w-full rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] p-4 text-left shadow-[var(--cds-elevation-level1)] transition hover:border-[var(--cds-color-grey-200)] hover:shadow-[var(--cds-elevation-level2)]">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="cds-subtitle-sm m-0 text-[var(--cds-color-grey-975)] leading-none">Leaderboard</h3>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <h3 className="cds-subtitle-sm m-0 text-[var(--cds-color-grey-975)] leading-none">Leaderboard</h3>
+        </div>
         <div className="relative max-w-[55%] min-w-0 shrink-0">
           <label htmlFor="home-mini-leaderboard-cohort" className="sr-only">
             Select cohort leaderboard
@@ -576,11 +494,32 @@ function HomeLeaderboardMiniWidget({
             : 'Open leaderboard'
         }
       >
-        <p className="cds-body-tertiary mb-2 text-[var(--cds-color-grey-600)]">
-          {cohort
-            ? `You're ${board.userRank} of ${cohort.members.toLocaleString()}`
-            : `You're ${board.userRank} of —`}
-        </p>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="cds-body-tertiary m-0 min-w-0 flex-1 text-[var(--cds-color-grey-600)]">
+            {cohort
+              ? `You're ${board.userRank} of ${cohort.members.toLocaleString()}`
+              : `You're ${board.userRank} of —`}
+          </p>
+          <button
+            type="button"
+            title="12 days left"
+            aria-label="12 days left in this sprint"
+            className="group relative inline-flex shrink-0 rounded-full text-[var(--cds-color-grey-600)] outline-none transition-colors hover:bg-[var(--cds-color-grey-50)] hover:text-[var(--cds-color-grey-975)] focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-700)] focus-visible:ring-offset-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="inline-flex h-7 w-7 items-center justify-center">
+              <span className="material-symbols-rounded leading-none" style={{ fontSize: 15 }} aria-hidden>
+                schedule
+              </span>
+            </span>
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-grey-800)] px-2 py-1 text-[11px] font-medium leading-tight text-[var(--cds-color-white)] opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+            >
+              12 days left
+            </span>
+          </button>
+        </div>
         <div className="min-w-0">
           <div className="space-y-0">
             {board.around.map((p) => (
@@ -649,7 +588,7 @@ function HomeLeaderboardModal({
         >
           <Icons.Close className="h-5 w-5" />
         </button>
-        <HomeLeaderboardContent
+        <CommunityLeaderboardPanel
           selectedCohort={selectedCohort}
           onSelectCohort={onSelectCohort}
           headingId="home-leaderboard-modal-title"

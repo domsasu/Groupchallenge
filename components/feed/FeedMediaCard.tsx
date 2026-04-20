@@ -78,6 +78,7 @@ export const FeedMediaCard: React.FC<FeedMediaCardProps> = ({ item, feedPreviewV
   const [cheerBurstKey, setCheerBurstKey] = useState(0);
   const [cheerPopKey, setCheerPopKey] = useState(0);
   const displayedCheer = cheer + (cheered ? 1 : 0);
+  const [saved, setSaved] = useState(false);
 
   const closePodcastPlayer = useCallback(() => {
     const a = podcastAudioRef.current;
@@ -468,6 +469,24 @@ export const FeedMediaCard: React.FC<FeedMediaCardProps> = ({ item, feedPreviewV
         >
           <Icons.Share className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
           <span className="tabular-nums">{formatEngagementCount(share)}</span>
+        </button>
+        <button
+          type="button"
+          className={`inline-flex min-h-9 min-w-9 items-center justify-center rounded-full cds-body-tertiary transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-500)] focus-visible:ring-offset-2 ${
+            saved
+              ? 'text-[var(--cds-color-blue-700)]'
+              : 'text-[var(--cds-color-grey-600)] hover:text-[var(--cds-color-blue-700)]'
+          }`}
+          aria-label={saved ? `Remove save · ${title}` : `Save · ${title}`}
+          aria-pressed={saved}
+          onClick={() => setSaved((s) => !s)}
+        >
+          <Icons.Bookmark
+            className="h-4 w-4 shrink-0"
+            strokeWidth={2}
+            fill={saved ? 'currentColor' : 'none'}
+            aria-hidden
+          />
         </button>
       </div>
     </article>
