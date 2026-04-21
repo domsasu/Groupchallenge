@@ -63,15 +63,21 @@ export const FeedStackedGroupSection: React.FC<FeedStackedGroupSectionProps> = (
   /** Only the hovered or focused tile plays; nothing autoplays on load. */
   const [playingTileIndex, setPlayingTileIndex] = useState<number | null>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [carouselPage, setCarouselPage] = useState(0);
+  const [carouselPageCount, setCarouselPageCount] = useState(1);
 
   const updateScrollButtons = useCallback(() => {
     const el = scrollerRef.current;
     if (!el) return;
     const { scrollLeft, scrollWidth, clientWidth } = el;
-    setCanScrollLeft(scrollLeft > 2);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 2);
+    const cw = clientWidth || 1;
+    const pages = Math.max(1, Math.ceil(scrollWidth / cw));
+    const idx = Math.min(
+      pages - 1,
+      Math.max(0, Math.round(scrollLeft / Math.max(cw, 1)))
+    );
+    setCarouselPageCount(pages);
+    setCarouselPage(idx);
   }, []);
 
   useEffect(() => {
@@ -83,14 +89,16 @@ export const FeedStackedGroupSection: React.FC<FeedStackedGroupSectionProps> = (
     return () => ro.disconnect();
   }, [videoItems, updateScrollButtons]);
 
-  const scrollByPage = useCallback((dir: -1 | 1) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    // One “page” ≈ five tiles (scroller viewport width).
-    const delta = el.clientWidth * dir;
-    el.scrollBy({ left: delta, behavior: 'smooth' });
-    window.setTimeout(updateScrollButtons, 350);
-  }, [updateScrollButtons]);
+  const scrollToCarouselPage = useCallback(
+    (pageIndex: number) => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const cw = el.clientWidth || 1;
+      el.scrollTo({ left: pageIndex * cw, behavior: 'smooth' });
+      window.setTimeout(updateScrollButtons, 350);
+    },
+    [updateScrollButtons]
+  );
 
   return (
     <section className="text-left" aria-label={ariaLabel}>
@@ -109,26 +117,13 @@ export const FeedStackedGroupSection: React.FC<FeedStackedGroupSectionProps> = (
         </div>
       ) : null}
 
-      {/* Chevrons sit half outside the strip (centered on the left/right rails); strip stays full column width. */}
+      {/* Home-style horizontal strip + dot pagination (Master SQL recommendations on Home). */}
       <div className="relative isolate min-h-0 w-full overflow-visible">
-        <button
-          type="button"
-          tabIndex={canScrollLeft ? 0 : -1}
-          disabled={!canScrollLeft}
-          onClick={() => scrollByPage(-1)}
-          aria-label="Show previous videos"
-          className="absolute left-2 top-1/2 z-[2] inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] text-[var(--cds-color-grey-800)] shadow-sm transition hover:bg-[var(--cds-color-grey-50)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-700)] disabled:pointer-events-none disabled:opacity-30 sm:left-0 sm:-translate-x-1/2"
-        >
-          <span className="material-symbols-rounded" style={{ fontSize: 18 }}>
-            chevron_left
-          </span>
-        </button>
-
         <div
           ref={scrollerRef}
           onScroll={updateScrollButtons}
           onMouseLeave={() => setPlayingTileIndex(null)}
-          className="flex min-h-0 min-w-0 w-full gap-4 overflow-x-auto scroll-smooth py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex min-h-0 min-w-0 w-full gap-4 overflow-x-auto scroll-smooth pb-2 py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {videoItems.map((item, i) => {
             const rowKey = `${sectionKey}-${i}-${item.title.slice(0, 24)}`;
@@ -177,18 +172,29 @@ export const FeedStackedGroupSection: React.FC<FeedStackedGroupSectionProps> = (
           })}
         </div>
 
-        <button
-          type="button"
-          tabIndex={canScrollRight ? 0 : -1}
-          disabled={!canScrollRight}
-          onClick={() => scrollByPage(1)}
-          aria-label="Show more videos"
-          className="absolute right-2 top-1/2 z-[2] inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] text-[var(--cds-color-grey-800)] shadow-sm transition hover:bg-[var(--cds-color-grey-50)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-700)] disabled:pointer-events-none disabled:opacity-30 sm:right-0 sm:translate-x-1/2"
-        >
-          <span className="material-symbols-rounded" style={{ fontSize: 18 }}>
-            chevron_right
-          </span>
-        </button>
+        {carouselPageCount > 1 ? (
+          <div
+            className="flex justify-center gap-2 mt-4"
+            role="tablist"
+            aria-label="Video strip pages"
+          >
+            {Array.from({ length: carouselPageCount }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={i === carouselPage}
+                aria-label={`Page ${i + 1} of ${carouselPageCount}`}
+                onClick={() => scrollToCarouselPage(i)}
+                className={`shrink-0 rounded-full transition-[width,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-700)] focus-visible:ring-offset-2 ${
+                  i === carouselPage
+                    ? 'h-2 w-6 bg-[var(--cds-color-grey-975)]'
+                    : 'h-2 w-2 bg-[var(--cds-color-grey-200)] hover:bg-[var(--cds-color-grey-400)]'
+                }`}
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );

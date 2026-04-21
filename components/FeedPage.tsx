@@ -153,7 +153,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
           </div>
         </div>
 
-        <div className="relative z-0 mx-auto max-w-[1440px] px-4 pb-4 md:px-6 md:pb-5 pt-0">
+        <div className="relative z-0 mx-auto max-w-[1440px] px-6 pb-10 pt-0 md:pb-12 space-y-10">
           {communitySurface === 'feed' && (
             <div id="community-panel-feed" role="tabpanel" aria-labelledby="community-tab-feed" className="relative z-0">
               <div className="mb-5 flex min-w-0 items-start gap-3">
