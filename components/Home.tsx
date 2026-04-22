@@ -1174,6 +1174,14 @@ export const Home: React.FC<HomeProps> = ({
           </div>
         </div>
 
+        {/* Mini feed — directly under course recommendations; See all opens Community */}
+        {onNavigateToFeed ? (
+          <MiniFeed
+            onOpenFeed={onNavigateToFeed}
+            onMiniFeedClipPlayingChange={setMiniFeedPreviewVideosActive}
+          />
+        ) : null}
+
         {/* Trending Now */}
         <div>
           <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)] mb-3">Trending now</h2>
@@ -1279,7 +1287,13 @@ export const Home: React.FC<HomeProps> = ({
 
         {/* In-demand Skills */}
         <div>
-          <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)] mb-4">In-demand skills</h2>
+          <div className="mb-4">
+            <h2 className="cds-subtitle-lg text-[var(--cds-color-grey-975)]">
+              <span className="font-semibold text-[#0A66C2]">LinkedIn</span>{' '}
+              In-demand skills
+            </h2>
+            <p className="cds-body-secondary mt-1 text-[var(--cds-color-grey-600)]">for Data Analyst</p>
+          </div>
           <div className="flex items-center justify-between">
             <div className="flex flex-wrap gap-2">
               {inDemandSkills.map((skill, idx) => (
@@ -1370,14 +1384,6 @@ export const Home: React.FC<HomeProps> = ({
             </button>
           </div>
         </div>
-
-        {/* Mini feed — bottom of home; See all opens Community */}
-        {onNavigateToFeed ? (
-          <MiniFeed
-            onOpenFeed={onNavigateToFeed}
-            onMiniFeedClipPlayingChange={setMiniFeedPreviewVideosActive}
-          />
-        ) : null}
 
       </div>
     </div>

@@ -1,10 +1,9 @@
 /**
- * Mini feed — compact Home preview of the user’s first joined cohort (video clips only).
+ * Mini feed — compact Home preview of community video clips (field-tagged lead rail).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_FEED_DISCIPLINE_SLUGS,
-  FEED_COHORT_META,
   JOINED_FEED_COHORT_IDS,
   getFeedPlaceholderItems,
   type FeedCohortId,
@@ -30,10 +29,6 @@ const MINI_FEED_REEL_SIZE =
 
 /** Video preview: square bottom edge where the clip meets the title row (Reels-style). */
 const MINI_FEED_VIDEO_FRAME = `relative ${MINI_FEED_REEL_SIZE} rounded-t-[var(--cds-border-radius-200)] rounded-b-none bg-[var(--cds-color-grey-100)]`;
-
-/** Hover: landscape preview inside the rail (16:9), width driven by flex parent. */
-const MINI_FEED_VIDEO_FRAME_EXPANDED =
-  'relative aspect-video w-full shrink-0 overflow-hidden rounded-t-[var(--cds-border-radius-200)] rounded-b-none bg-[var(--cds-color-grey-100)] max-w-none mx-0 transition-[aspect-ratio] duration-300 ease-out';
 
 /** Default mini-feed preview clip (`public/videos/career-change-mini.mov`). */
 const MINI_FEED_CLIP_VIDEO_SRC = '/videos/career-change-mini.mov';
@@ -192,7 +187,6 @@ export interface MiniFeedProps {
 
 export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPlayingChange }) => {
   const firstCohortId: FeedCohortId = JOINED_FEED_COHORT_IDS[0] ?? 'workingparents';
-  const cohortMeta = FEED_COHORT_META[firstCohortId];
   /** Matches FeedPage default pills so preview MOV assets align with Community timeline. */
   const dataScienceLensActive = DEFAULT_FEED_DISCIPLINE_SLUGS.includes(DATA_SCIENCE_DISCIPLINE_SLUG);
 
@@ -283,13 +277,6 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
   const [segmentNonce, setSegmentNonce] = useState(0);
   const [clipUnmuted, setClipUnmuted] = useState(false);
 
-  /** Desktop: hovered video tile grows to 16:9; siblings shrink (bounded by section column). */
-  const [expandedVideoTileIndex, setExpandedVideoTileIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    setExpandedVideoTileIndex(null);
-  }, [safePage, items]);
-
   useEffect(() => {
     setPageIndex((p) => Math.min(p, Math.max(0, pageCount - 1)));
   }, [pageCount]);
@@ -302,14 +289,11 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
   useEffect(() => {
     if (!sectionFullyOnScreen) {
       setClipUnmuted(false);
-      setExpandedVideoTileIndex(null);
     }
   }, [sectionFullyOnScreen]);
 
   useEffect(() => {
     if (!sectionFullyOnScreen || videoSlotIndices.length === 0) return;
-    /** Pause rotation while a video tile is hovered so only that clip plays and segmentNonce does not restart it every slice. */
-    if (expandedVideoTileIndex !== null) return;
     const id = window.setInterval(() => {
       setSegmentNonce((n) => n + 1);
       setActiveVideoSlotQi((q) => {
@@ -319,7 +303,7 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
       });
     }, MINI_FEED_SEGMENT_MS);
     return () => window.clearInterval(id);
-  }, [sectionFullyOnScreen, videoSlotIndices, safePage, expandedVideoTileIndex]);
+  }, [sectionFullyOnScreen, videoSlotIndices, safePage]);
 
   const miniFeedPreviewVideosActive =
     sectionFullyOnScreen && videoSlotIndices.length > 0;
@@ -335,7 +319,7 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
     <section
       ref={sectionRef}
       className="rounded-[var(--cds-border-radius-200)] bg-[var(--cds-color-white)] p-4 sm:p-5 text-left"
-      aria-label={`Feed for ${cohortMeta.label}. Use See all to open the full feed.`}
+      aria-label="Feed for your field. Use See all to open the full feed."
     >
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
         <button
@@ -353,10 +337,10 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:grid-rows-[auto_auto] sm:items-stretch sm:gap-x-5 sm:gap-y-4">
         <div className="flex min-h-0 w-full flex-col items-center justify-center gap-2 border-b border-[var(--cds-color-grey-100)] pb-4 text-center sm:row-start-1 sm:col-start-1 sm:h-full sm:border-b-0 sm:border-r sm:border-[var(--cds-color-grey-100)] sm:pb-0 sm:pr-5">
           <p className="cds-body-secondary max-w-[12rem] text-[var(--cds-color-grey-800)]">
-            Interest in your cohort
+            Interest in your field
           </p>
           <span className="cds-body-tertiary rounded-[var(--cds-border-radius-400)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] px-2 py-0.5 text-[var(--cds-color-grey-700)]">
-            {cohortMeta.pillLabel}
+            Data analyst
           </span>
         </div>
 
@@ -366,22 +350,10 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
               const rowKey = `mini-${globalIndex}-${item.type}-${item.title.slice(0, 32)}`;
               const openRow = openCommunityFeed;
 
-              const isThisVideoExpanded = expandedVideoTileIndex === i;
-              const isRowExpanded = expandedVideoTileIndex !== null;
-
-              const tileFlexClass = isThisVideoExpanded
-                ? 'sm:flex-[2.35_1_0%] sm:min-w-0 sm:z-10'
-                : isRowExpanded
-                  ? 'sm:flex-[0.68_1_0%] sm:min-w-[3.25rem]'
-                  : 'sm:flex-1 sm:min-w-0';
-
               const tileBase =
-                `flex h-full min-w-0 flex-col overflow-hidden rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] text-left transition-colors hover:border-[var(--cds-color-grey-200)] hover:bg-[var(--cds-color-grey-50)] sm:transition-[flex-grow,flex-basis] sm:duration-300 sm:ease-out ${tileFlexClass}`;
+                'flex h-full min-w-0 flex-col overflow-hidden rounded-[var(--cds-border-radius-200)] border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-grey-25)] text-left transition-colors hover:border-[var(--cds-color-grey-200)] hover:bg-[var(--cds-color-grey-50)] sm:flex-1 sm:min-w-0';
 
-              const isActiveVideoSegment =
-                expandedVideoTileIndex !== null
-                  ? i === expandedVideoTileIndex
-                  : i === activeVideoItemIndex;
+              const isActiveVideoSegment = i === activeVideoItemIndex;
               const videoOrdinalAmongVideos = i;
               const clipSrc =
                 dataScienceLensActive &&
@@ -393,9 +365,7 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
                         : videoOrdinalAmongVideos
                     ] ?? MINI_FEED_CLIP_VIDEO_SRC;
 
-              const videoFrameClass = isThisVideoExpanded
-                ? `${MINI_FEED_VIDEO_FRAME_EXPANDED} group`
-                : `${MINI_FEED_VIDEO_FRAME} group transition-[aspect-ratio] duration-300 ease-out`;
+              const videoFrameClass = `${MINI_FEED_VIDEO_FRAME} group`;
 
               const videoMeta = (
                 <>
@@ -422,18 +392,6 @@ export const MiniFeed: React.FC<MiniFeedProps> = ({ onOpenFeed, onMiniFeedClipPl
                   tabIndex={0}
                   className={`${tileBase} cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cds-color-blue-700)] focus-visible:ring-offset-2`}
                   onClick={openRow}
-                  onMouseEnter={() => {
-                    if (sectionFullyOnScreen) setExpandedVideoTileIndex(i);
-                  }}
-                  onMouseLeave={() => setExpandedVideoTileIndex(null)}
-                  onFocusCapture={() => {
-                    if (sectionFullyOnScreen) setExpandedVideoTileIndex(i);
-                  }}
-                  onBlurCapture={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-                      setExpandedVideoTileIndex(null);
-                    }
-                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();

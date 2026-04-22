@@ -18,21 +18,14 @@ import type { CohortId } from './MyLearning';
 export type CommunitySurface = 'feed' | 'challenges' | 'leaderboard';
 
 export interface FeedPageProps {
-  /** When opening Community from Home mini-feed, select this cohort (same as mini-feed lead cohort). */
-  initialSelectedCohortId?: FeedCohortId;
   /** Open Community on a specific tab (e.g. deep link from Home). Defaults to Feed. */
   initialCommunityTab?: CommunitySurface;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, initialCommunityTab }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ initialCommunityTab }) => {
   const { variant, surface } = useSiteVariant();
-  /** One active filter or none — none loads the full interleaved stream (all groups/topics lens). */
-  const [pillSelection, setPillSelection] = useState<FeedPillSelection>(() => {
-    if (initialSelectedCohortId && JOINED_FEED_COHORT_IDS.includes(initialSelectedCohortId)) {
-      return { kind: 'cohort', cohortId: initialSelectedCohortId };
-    }
-    return { kind: 'none' };
-  });
+  /** One active topic filter or none — none loads the full interleaved stream. */
+  const [pillSelection, setPillSelection] = useState<FeedPillSelection>({ kind: 'none' });
 
   const activeDisciplineSlugs = useMemo((): string[] => {
     if (pillSelection.kind === 'topic') return [pillSelection.slug];
@@ -47,8 +40,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
   useEffect(() => {
     if (initialCommunityTab) setCommunitySurface(initialCommunityTab);
   }, [initialCommunityTab]);
-
-  const railJoinedIds = JOINED_FEED_COHORT_IDS;
 
   const allStreamCohortIds = useMemo(
     () => [...JOINED_FEED_COHORT_IDS, ...JOINABLE_FEED_COHORT_IDS],
@@ -160,15 +151,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ initialSelectedCohortId, ini
                 <div className="min-w-0 flex-1">
                   <FeedCohortPills
                     variant="coursera"
-                    joinedCohortIds={railJoinedIds}
                     pillSelection={pillSelection}
-                    onSelectCohort={(cohortId) =>
-                      setPillSelection((prev) =>
-                        prev.kind === 'cohort' && prev.cohortId === cohortId
-                          ? { kind: 'none' }
-                          : { kind: 'cohort', cohortId }
-                      )
-                    }
                     onSelectTopic={(slug) =>
                       setPillSelection((prev) =>
                         prev.kind === 'topic' && prev.slug === slug ? { kind: 'none' } : { kind: 'topic', slug }

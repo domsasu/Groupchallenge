@@ -13,11 +13,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
-import {
-  COURSERA_BROWSE_DISCIPLINES,
-  FEED_COHORT_META,
-  type FeedCohortId,
-} from '../../constants/feedCohorts';
+import { COURSERA_BROWSE_DISCIPLINES } from '../../constants/feedCohorts';
 
 /** Icons aligned with Coursera browse category pills (coursera.org). */
 const DISCIPLINE_ICON_BY_SLUG: Record<string, LucideIcon> = {
@@ -34,19 +30,13 @@ const DISCIPLINE_ICON_BY_SLUG: Record<string, LucideIcon> = {
   'social-sciences': Users,
 };
 
-/** One active filter, or none — no selection shows content from all communities/topics. */
-export type FeedPillSelection =
-  | { kind: 'none' }
-  | { kind: 'cohort'; cohortId: FeedCohortId }
-  | { kind: 'topic'; slug: string };
+/** One active topic filter, or none — no selection shows content across all Coursera topics. */
+export type FeedPillSelection = { kind: 'none' } | { kind: 'topic'; slug: string };
 
 export type FeedCohortPillsCourseraProps = {
   variant: 'coursera';
-  /** Joined communities — rendered first (purple); same order as feed stacks. */
-  joinedCohortIds: FeedCohortId[];
   pillSelection: FeedPillSelection;
   /** Toggle: parent clears selection (none) when the same pill is chosen again. */
-  onSelectCohort: (id: FeedCohortId) => void;
   onSelectTopic: (slug: string) => void;
   compact?: boolean;
 };
@@ -70,13 +60,6 @@ const pillClassesDefault = (active: boolean, compact: boolean) =>
       : 'border border-[var(--cds-color-grey-100)] bg-[var(--cds-color-white)] text-[var(--cds-color-grey-800)] hover:bg-[var(--cds-color-grey-25)]'
   }`;
 
-const cohortCommunityPillClasses = (pressed: boolean) =>
-  `inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cds-color-purple-700)] focus-visible:ring-offset-2 ${
-    pressed
-      ? 'border-[var(--cds-color-purple-600)] bg-[var(--cds-color-purple-100)] text-[var(--cds-color-purple-975)] shadow-sm'
-      : 'border-[var(--cds-color-purple-200)] bg-[var(--cds-color-purple-25)] text-[var(--cds-color-grey-975)] hover:bg-[var(--cds-color-purple-50)]'
-  }`;
-
 const courseraPillClasses = (pressed: boolean) =>
   `inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0056d2] focus-visible:ring-offset-2 ${
     pressed
@@ -93,30 +76,15 @@ export const FeedCohortPills: React.FC<FeedCohortPillsProps> = (props) => {
   const compact = props.compact ?? false;
 
   if (isCourseraMulti(props)) {
-    const { joinedCohortIds, pillSelection, onSelectCohort, onSelectTopic } = props;
+    const { pillSelection, onSelectTopic } = props;
 
     return (
       <div className="min-w-0 flex-1">
         <div
           role="group"
-          aria-label="Filter by cohort or Coursera topic. Turn off every pill to show all communities."
+          aria-label="Filter by Coursera topic. Turn the selection off to show all topics."
           className="flex w-full min-w-0 flex-wrap items-center gap-2 py-0.5"
         >
-          {joinedCohortIds.map((cohortId) => {
-            const pressed = pillSelection.kind === 'cohort' && pillSelection.cohortId === cohortId;
-            return (
-              <button
-                key={`cohort-${cohortId}`}
-                type="button"
-                aria-pressed={pressed}
-                className={cohortCommunityPillClasses(pressed)}
-                onClick={() => onSelectCohort(cohortId)}
-              >
-                <Users className="h-4 w-4 shrink-0 stroke-[1.75] text-current opacity-90" aria-hidden />
-                <span>{FEED_COHORT_META[cohortId].label}</span>
-              </button>
-            );
-          })}
           {COURSERA_BROWSE_DISCIPLINES.map(({ slug, label }) => {
             const Icon = DISCIPLINE_ICON_BY_SLUG[slug] ?? Globe;
             const pressed = pillSelection.kind === 'topic' && pillSelection.slug === slug;

@@ -695,20 +695,17 @@ const App: React.FC = () => {
     setCurrentView('home');
   };
 
-  const [feedInitialCohortId, setFeedInitialCohortId] = useState<FeedCohortId | undefined>(undefined);
   const [feedInitialCommunityTab, setFeedInitialCommunityTab] = useState<CommunitySurface | undefined>(
     undefined
   );
 
   const navigateToFeed = useCallback((opts?: { cohortId?: FeedCohortId; tab?: CommunitySurface }) => {
-    if (opts?.cohortId) setFeedInitialCohortId(opts.cohortId);
     if (opts?.tab) setFeedInitialCommunityTab(opts.tab);
     setCurrentView('feed');
   }, []);
 
   useEffect(() => {
     if (currentView !== 'feed') {
-      setFeedInitialCohortId(undefined);
       setFeedInitialCommunityTab(undefined);
     }
   }, [currentView]);
@@ -796,10 +793,7 @@ const App: React.FC = () => {
         )}
 
         {currentView === 'feed' && (
-          <FeedPage
-            initialSelectedCohortId={feedInitialCohortId}
-            initialCommunityTab={feedInitialCommunityTab}
-          />
+          <FeedPage initialCommunityTab={feedInitialCommunityTab} />
         )}
 
         {currentView === 'learning' && (
