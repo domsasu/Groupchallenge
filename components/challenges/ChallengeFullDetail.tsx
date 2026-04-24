@@ -297,45 +297,17 @@ export const ChallengeFullDetail: React.FC<ChallengeFullDetailProps> = ({
             <h2 className="text-lg font-semibold leading-snug text-white drop-shadow-sm sm:text-xl">{challenge.name}</h2>
             <p className="max-w-3xl text-sm leading-relaxed text-white/85 drop-shadow-sm">{challenge.whyJoin}</p>
           </div>
-          {(isActive && !optedIn) || isUpcoming ? (
+          {!isCompleted && ((isActive && !optedIn) || isUpcoming) && (
             <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:items-end">
-              {isActive && !optedIn && (
-                <button
-                  type="button"
-                  onClick={joinChallenge}
-                  className="rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-4 py-2 cds-action-secondary text-[var(--cds-color-white)] hover:bg-[var(--cds-color-blue-800)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
-                >
-                  Join challenge
-                </button>
-              )}
-              {isUpcoming && optedIn && (
-                <span
-                  className="rounded-[var(--cds-border-radius-100)] border border-[var(--cds-color-grey-200)] bg-[var(--cds-color-white)] px-4 py-2 cds-action-secondary text-[var(--cds-color-grey-975)] shadow-sm"
-                  role="status"
-                >
-                  Set reminder
-                </span>
-              )}
-              {isUpcoming && !optedIn && (
-                <>
-                  <button
-                    type="button"
-                    onClick={onToggleOptIn}
-                    className="rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-4 py-2 cds-action-secondary text-[var(--cds-color-white)] hover:bg-[var(--cds-color-blue-800)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
-                  >
-                    Remind me
-                  </button>
-                  <button
-                    type="button"
-                    onClick={joinChallenge}
-                    className="rounded-[var(--cds-border-radius-100)] border border-white/35 bg-white/10 px-4 py-2 cds-action-secondary text-white hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
-                  >
-                    Join challenge
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={joinChallenge}
+                className="rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-4 py-2 cds-action-secondary text-[var(--cds-color-white)] hover:bg-[var(--cds-color-blue-800)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
+              >
+                Join challenge
+              </button>
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 

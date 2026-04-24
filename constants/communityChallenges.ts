@@ -145,7 +145,7 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     id: 'ch-active-ai-vibe-coding',
     name: "It's a Vibe",
     cohortId: 'ai',
-    lifecycle: 'active',
+    lifecycle: 'upcoming',
     groupIndex: 2,
     groupCount: 4,
     groupPlace: 1,
@@ -164,7 +164,7 @@ export const MOCK_COMMUNITY_CHALLENGES: CommunityChallenge[] = [
     ],
     startsAt: '2026-04-03',
     endsAt: '2026-05-15',
-    daysLeft: 30,
+    daysLeft: undefined,
     optedIn: false,
     currentTierIndex: 0,
     /**
@@ -588,7 +588,7 @@ export function sortChallengesByJoinedCohortOrder(challenges: CommunityChallenge
 }
 
 /**
- * Community → Challenges strip order. Upcoming tab puts **AI & data** first, then working parents,
+ * Community → Challenges strip order. Browse tab puts **AI & data** first, then working parents,
  * then Coursera community (so e.g. AI cohort challenge appears before the 14-day streak). Other tabs use join order.
  */
 const UPCOMING_STRIP_COHORT_PRIORITY: FeedCohortId[] = ['ai', 'workingparents', 'enrolled'];

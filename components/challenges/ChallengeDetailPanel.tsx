@@ -300,7 +300,7 @@ export const ChallengeDetailPanel: React.FC<ChallengeDetailPanelProps> = ({
         </div>
       )}
 
-      {/* Primary CTAs for active (join) and upcoming (remind / set reminder) live in ChallengeFullDetail hero. */}
+      {/* Join / resume: hero has Join for active (not yet in) and all upcoming; Resume + Leave here for active + opted in. */}
       {!isCompleted && !isUpcoming && optedIn && (
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button

@@ -159,7 +159,7 @@ export const ChallengeJoinFlow: React.FC<ChallengeJoinFlowProps> = ({ challenge,
                 onClick={handleStartIntro}
                 className="mt-2 w-full rounded-[var(--cds-border-radius-100)] bg-[var(--cds-color-blue-700)] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--cds-color-blue-800)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--cds-color-blue-700)]"
               >
-                Start challenge
+                Join challenge
               </button>
             </div>
           </div>

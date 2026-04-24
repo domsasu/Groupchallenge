@@ -22,9 +22,21 @@ import { SuggestChallengeStripCard } from './SuggestChallengeStripCard';
 
 const STATUS_TABS: { id: ChallengeLifecycle; label: string }[] = [
   { id: 'active', label: 'Active' },
-  { id: 'upcoming', label: 'Upcoming' },
+  { id: 'upcoming', label: 'Browse' },
   { id: 'completed', label: 'Completed' },
 ];
+
+/** Stable `id` / `aria-labelledby` slugs (first tab: Active; data model still uses `active` / `upcoming`). */
+function challengeStatusTabId(lifecycle: ChallengeLifecycle): string {
+  switch (lifecycle) {
+    case 'active':
+      return 'challenge-status-active';
+    case 'upcoming':
+      return 'challenge-status-browse';
+    case 'completed':
+      return 'challenge-status-completed';
+  }
+}
 
 type ChallengeSelection =
   | { kind: 'challenge'; id: string }
@@ -158,7 +170,7 @@ export const ChallengesView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Challenge status">
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Challenges">
         {STATUS_TABS.map((t) => {
           const selected = statusTab === t.id;
           return (
@@ -166,7 +178,7 @@ export const ChallengesView: React.FC = () => {
               key={t.id}
               type="button"
               role="tab"
-              id={`challenge-status-${t.id}`}
+              id={challengeStatusTabId(t.id)}
               aria-selected={selected}
               tabIndex={selected ? 0 : -1}
               onClick={() => setStatusTab(t.id)}
@@ -182,7 +194,7 @@ export const ChallengesView: React.FC = () => {
         })}
       </div>
 
-      <div className="space-y-4" role="tabpanel" aria-labelledby={`challenge-status-${statusTab}`}>
+      <div className="space-y-4" role="tabpanel" aria-labelledby={challengeStatusTabId(statusTab)}>
         {!hasAnyStrip ? (
           <p className="cds-body-secondary text-[var(--cds-color-grey-600)]">No challenges in this category.</p>
         ) : (
